@@ -4,4 +4,3 @@ pydantic
 langchain
 langchain-ollama
 langchain-groq
-os
