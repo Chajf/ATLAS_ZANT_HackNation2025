@@ -3,12 +3,15 @@ from langchain_groq import ChatGroq
 from schemas import InjuryEvaluationResponse, InjuryDescriptionRequest
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 import json
+import os
 
 # llm = ChatOllama(
 #     model="qwen3:latest",
 #     num_ctx=12000,
 #     reasoning=True
 # )
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 llm = ChatGroq(
     model_name="openai/gpt-oss-20b",
