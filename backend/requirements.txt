@@ -6,3 +6,4 @@ langchain-ollama
 langchain-groq
 pypdf
 python-multipart
+pymupdf

@@ -1,18 +1,60 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 function FeedbackSection({ formData, onPrev }) {
-  const handleDownload = () => {
-    // Create JSON file with form data
-    const dataStr = JSON.stringify(formData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `wypadek_przy_pracy_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+  const handleDownloadPDF = async () => {
+    setIsDownloading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`${API_URL}/generate-accident-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Błąd serwera' }));
+        throw new Error(errorData.detail || `Błąd HTTP: ${response.status}`);
+      }
+
+      // Get PDF blob from response
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Extract filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `Zawiadomienie_o_wypadku_${new Date().toISOString().split('T')[0]}.pdf`;
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (err) {
+      console.error('Error downloading PDF:', err);
+      setError(err.message || 'Nie udało się pobrać pliku PDF. Sprawdź czy backend jest uruchomiony.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const formatDataForDisplay = () => {
@@ -107,26 +149,43 @@ function FeedbackSection({ formData, onPrev }) {
         ))}
       </div>
 
+      {error && (
+        <div style={{ 
+          backgroundColor: '#fee', 
+          color: '#c33', 
+          padding: '1rem', 
+          borderRadius: '8px', 
+          marginBottom: '1rem',
+          border: '1px solid #fcc'
+        }}>
+          <strong>Błąd:</strong> {error}
+        </div>
+      )}
+
       <div className="button-group">
         <button 
           type="button" 
           className="btn btn-secondary"
           onClick={onPrev}
+          disabled={isDownloading}
         >
           Wstecz
         </button>
         <button 
           type="button" 
           className="btn btn-primary"
-          onClick={handleDownload}
+          onClick={handleDownloadPDF}
+          disabled={isDownloading}
         >
-          Pobierz dane (JSON)
+          {isDownloading ? 'Generowanie PDF...' : '📄 Pobierz Zawiadomienie o Wypadku (PDF)'}
         </button>
       </div>
 
       <p style={{ marginTop: '1rem', color: '#666', fontSize: '0.9rem' }}>
-        Dane zostały zapisane i mogą być wykorzystane do wygenerowania dokumentu PDF 
-        przez system backendowy.
+        {isDownloading 
+          ? 'Trwa generowanie dokumentu PDF...' 
+          : 'Kliknij przycisk powyżej, aby pobrać wypełniony formularz zawiadomienia o wypadku w formacie PDF.'
+        }
       </p>
     </div>
   );

@@ -109,3 +109,69 @@ class InjuryDescriptionRequest(BaseModel):
     description: str = Field(
         description="User's description of the workplace injury incident"
     )
+
+
+class AccidentNotificationRequest(BaseModel):
+    """Request model for accident notification PDF generation"""
+    # Personal data
+    pesel: str = ""
+    firstName: str = ""
+    lastName: str = ""
+    birthDate: str = ""
+    birthPlace: str = ""
+    phoneNumber: str = ""
+    documentType: str = ""
+    documentSeries: str = ""
+    documentNumber: str = ""
+    
+    # Current address
+    street: str = ""
+    houseNumber: str = ""
+    apartmentNumber: str = ""
+    postalCode: str = ""
+    city: str = ""
+    country: str = ""
+    
+    # Last Poland address
+    lastPolandStreet: str = ""
+    lastPolandHouseNumber: str = ""
+    lastPolandApartmentNumber: str = ""
+    lastPolandPostalCode: str = ""
+    lastPolandCity: str = ""
+    
+    # Correspondence address
+    isLastPolandCorrespondenceAddress: str = ""
+    corrStreet: str = ""
+    corrHouseNumber: str = ""
+    corrApartmentNumber: str = ""
+    corrPostalCode: str = ""
+    corrCity: str = ""
+    corrCountry: str = ""
+    
+    # Accident details
+    accidentDate: str = ""
+    accidentTime: str = ""
+    accidentLocation: str = ""
+    plannedStartTime: str = ""
+    plannedEndTime: str = ""
+    injuryType: str = ""
+    accidentDescription: str = ""
+    wasFirstAidGiven: str = ""
+    healthFacilityInfo: str = ""
+    investigatingAuthority: str = ""
+    wasMachineryInvolved: str = ""
+    machineryCondition: str = ""
+    hasCertification: str = ""
+    isInInventory: str = ""
+    
+    # Attachments
+    attachHospitalCard: bool = False
+    attachProsecutorDecision: bool = False
+    attachDeathCertificate: bool = False
+    attachRightToIssueCard: bool = False
+    otherAttachments: str = ""
+    
+    # Declaration
+    declarationDate: str = ""
+    documentsDeliveryDate: str = ""
+    responseMethod: str = ""
