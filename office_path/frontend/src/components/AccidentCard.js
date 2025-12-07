@@ -14,10 +14,17 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
     victimFirstName: '',
     victimPesel: '',
     victimAddress: '',
+    victimDocumentType: '',
+    victimDocumentSeries: '',
+    victimDocumentNumber: '',
+    victimBirthDate: '',
+    victimBirthPlace: '',
     victimEducation: '',
     victimPosition: '',
     victimExperience: '',
     victimEmploymentType: '',
+    victimInsuranceTitle: '',
+    victimInsuranceTitleNumber: '',
     
     // III. Dane dotyczące wypadku
     accidentDate: '',
@@ -25,7 +32,12 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
     accidentPlace: '',
     accidentDescription: '',
     accidentCause: '',
-    witnesses: '',
+    witness1Name: '',
+    witness1Address: '',
+    witness2Name: '',
+    witness2Address: '',
+    witness3Name: '',
+    witness3Address: '',
     
     // IV. Skutki wypadku
     injuryType: '',
@@ -48,7 +60,17 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
     
     // VII. Decyzja
     decision: analysisData?.eligibility?.decision || '',
-    decisionJustification: ''
+    decisionJustification: '',
+    victimViolationProved: 'nie',
+    victimViolationEvidence: '',
+    victimIntoxicationProved: 'nie',
+    victimIntoxicationEvidence: '',
+    
+    // VIII. Dane administracyjne
+    cardReceivedDate: '',
+    cardPreparationObstacles: '',
+    preparingEntityName: '',
+    preparerName: ''
   });
 
   // Auto-fill form data when extractedData is available
@@ -57,11 +79,9 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
       const fullAddress = `${extractedData.street || ''} ${extractedData.houseNumber || ''}${extractedData.apartmentNumber ? '/' + extractedData.apartmentNumber : ''}, ${extractedData.postalCode || ''} ${extractedData.city || ''}`.trim();
       
       // Format witnesses
-      const witnessesText = [
-        extractedData.witness1?.firstName && extractedData.witness1?.lastName ? `${extractedData.witness1.firstName} ${extractedData.witness1.lastName}` : '',
-        extractedData.witness2?.firstName && extractedData.witness2?.lastName ? `${extractedData.witness2.firstName} ${extractedData.witness2.lastName}` : '',
-        extractedData.witness3?.firstName && extractedData.witness3?.lastName ? `${extractedData.witness3.firstName} ${extractedData.witness3.lastName}` : ''
-      ].filter(w => w).join(', ');
+      const witness1Name = extractedData.witness1?.firstName && extractedData.witness1?.lastName ? `${extractedData.witness1.firstName} ${extractedData.witness1.lastName}` : '';
+      const witness2Name = extractedData.witness2?.firstName && extractedData.witness2?.lastName ? `${extractedData.witness2.firstName} ${extractedData.witness2.lastName}` : '';
+      const witness3Name = extractedData.witness3?.firstName && extractedData.witness3?.lastName ? `${extractedData.witness3.firstName} ${extractedData.witness3.lastName}` : '';
       
       // Build employer address from DOCX data
       const employerAddress = extractedData.employerLocation || '';
@@ -85,7 +105,9 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
         accidentTime: extractedData.accidentTime || '',
         accidentPlace: extractedData.accidentLocation || '',
         accidentDescription: extractedData.accidentDescription || extractedData.detailedExplanation || '',
-        witnesses: witnessesText,
+        witness1Name: witness1Name,
+        witness2Name: witness2Name,
+        witness3Name: witness3Name,
         
         // IV. Skutki wypadku
         injuryType: extractedData.injuryType?.toLowerCase().includes('ciężki') ? 'ciezkie' : 'lekkie',
@@ -265,6 +287,74 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
 
           <div className="form-row">
             <div className="form-group">
+              <label htmlFor="victimBirthDate">Data urodzenia</label>
+              <input
+                type="date"
+                id="victimBirthDate"
+                name="victimBirthDate"
+                value={cardData.victimBirthDate}
+                onChange={handleChange}
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="victimBirthPlace">Miejsce urodzenia</label>
+              <input
+                type="text"
+                id="victimBirthPlace"
+                name="victimBirthPlace"
+                value={cardData.victimBirthPlace}
+                onChange={handleChange}
+                placeholder="Miasto, kraj"
+              />
+            </div>
+          </div>
+
+          <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#555' }}>Dokument tożsamości</h4>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="victimDocumentType">Rodzaj dokumentu</label>
+              <select
+                id="victimDocumentType"
+                name="victimDocumentType"
+                value={cardData.victimDocumentType}
+                onChange={handleChange}
+              >
+                <option value="">Wybierz...</option>
+                <option value="dowod_osobisty">Dowód osobisty</option>
+                <option value="paszport">Paszport</option>
+                <option value="karta_pobytu">Karta pobytu</option>
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="victimDocumentSeries">Seria</label>
+              <input
+                type="text"
+                id="victimDocumentSeries"
+                name="victimDocumentSeries"
+                value={cardData.victimDocumentSeries}
+                onChange={handleChange}
+                placeholder="np. ABC"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="victimDocumentNumber">Numer</label>
+              <input
+                type="text"
+                id="victimDocumentNumber"
+                name="victimDocumentNumber"
+                value={cardData.victimDocumentNumber}
+                onChange={handleChange}
+                placeholder="np. 123456"
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
               <label htmlFor="victimEducation">Wykształcenie</label>
               <select
                 id="victimEducation"
@@ -319,6 +409,34 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
               <option value="umowa_o_dzielo">Umowa o dzieło</option>
               <option value="samozatrudnienie">Samozatrudnienie</option>
             </select>
+          </div>
+
+          <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#555' }}>Tytuł ubezpieczenia wypadkowego</h4>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="victimInsuranceTitleNumber">Numer pozycji</label>
+              <input
+                type="text"
+                id="victimInsuranceTitleNumber"
+                name="victimInsuranceTitleNumber"
+                value={cardData.victimInsuranceTitleNumber}
+                onChange={handleChange}
+                placeholder="np. 01 10 00"
+              />
+            </div>
+            
+            <div className="form-group" style={{ flex: '2' }}>
+              <label htmlFor="victimInsuranceTitle">Pełny tytuł ubezpieczenia</label>
+              <input
+                type="text"
+                id="victimInsuranceTitle"
+                name="victimInsuranceTitle"
+                value={cardData.victimInsuranceTitle}
+                onChange={handleChange}
+                placeholder="np. Pracownik zatrudniony na podstawie umowy o pracę"
+              />
+            </div>
           </div>
         </div>
 
@@ -391,16 +509,84 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="witnesses">Świadkowie wypadku</label>
-            <textarea
-              id="witnesses"
-              name="witnesses"
-              value={cardData.witnesses}
-              onChange={handleChange}
-              rows="2"
-              placeholder="Imiona, nazwiska i stanowiska świadków"
-            />
+          <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#555' }}>Świadkowie wypadku</h4>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="witness1Name">Świadek 1 - Imię i nazwisko</label>
+              <input
+                type="text"
+                id="witness1Name"
+                name="witness1Name"
+                value={cardData.witness1Name}
+                onChange={handleChange}
+                placeholder="Jan Kowalski"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="witness1Address">Miejsce zamieszkania</label>
+              <input
+                type="text"
+                id="witness1Address"
+                name="witness1Address"
+                value={cardData.witness1Address}
+                onChange={handleChange}
+                placeholder="ul. Przykładowa 1, 00-000 Warszawa"
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="witness2Name">Świadek 2 - Imię i nazwisko</label>
+              <input
+                type="text"
+                id="witness2Name"
+                name="witness2Name"
+                value={cardData.witness2Name}
+                onChange={handleChange}
+                placeholder="Anna Nowak"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="witness2Address">Miejsce zamieszkania</label>
+              <input
+                type="text"
+                id="witness2Address"
+                name="witness2Address"
+                value={cardData.witness2Address}
+                onChange={handleChange}
+                placeholder="ul. Przykładowa 2, 00-000 Warszawa"
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="witness3Name">Świadek 3 - Imię i nazwisko</label>
+              <input
+                type="text"
+                id="witness3Name"
+                name="witness3Name"
+                value={cardData.witness3Name}
+                onChange={handleChange}
+                placeholder="Piotr Wiśniewski"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="witness3Address">Miejsce zamieszkania</label>
+              <input
+                type="text"
+                id="witness3Address"
+                name="witness3Address"
+                value={cardData.witness3Address}
+                onChange={handleChange}
+                placeholder="ul. Przykładowa 3, 00-000 Warszawa"
+              />
+            </div>
           </div>
         </div>
 
@@ -625,6 +811,133 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
               onChange={handleChange}
               rows="5"
               placeholder="Szczegółowe uzasadnienie podjętej decyzji z powołaniem się na przepisy prawa"
+              required
+            />
+          </div>
+
+          <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#555' }}>Okoliczności wyłączające uznanie za wypadek przy pracy</h4>
+          
+          <div className="form-group">
+            <label htmlFor="victimViolationProved">
+              5. Stwierdzono, że wyłączną przyczyną wypadku było udowodnione naruszenie przez poszkodowanego 
+              przepisów dotyczących ochrony życia i zdrowia, spowodowane przez niego umyślnie lub wskutek rażącego niedbalstwa
+            </label>
+            <select
+              id="victimViolationProved"
+              name="victimViolationProved"
+              value={cardData.victimViolationProved}
+              onChange={handleChange}
+            >
+              <option value="nie">Nie</option>
+              <option value="tak">Tak</option>
+            </select>
+          </div>
+
+          {cardData.victimViolationProved === 'tak' && (
+            <div className="form-group">
+              <label htmlFor="victimViolationEvidence">Wskazać dowody naruszenia przepisów *</label>
+              <textarea
+                id="victimViolationEvidence"
+                name="victimViolationEvidence"
+                value={cardData.victimViolationEvidence}
+                onChange={handleChange}
+                rows="4"
+                placeholder="Szczegółowe wskazanie dowodów (zeznania świadków, dokumentacja, nagrania, itp.)"
+                required={cardData.victimViolationProved === 'tak'}
+              />
+            </div>
+          )}
+
+          <div className="form-group">
+            <label htmlFor="victimIntoxicationProved">
+              6. Stwierdzono, że poszkodowany, będąc w stanie nietrzeźwości lub pod wpływem środków odurzających 
+              lub substancji psychotropowych, przyczynił się w znacznym stopniu do spowodowania wypadku
+            </label>
+            <select
+              id="victimIntoxicationProved"
+              name="victimIntoxicationProved"
+              value={cardData.victimIntoxicationProved}
+              onChange={handleChange}
+            >
+              <option value="nie">Nie</option>
+              <option value="tak">Tak</option>
+              <option value="odmowa_badania">Poszkodowany odmówił poddania się badaniu</option>
+            </select>
+          </div>
+
+          {(cardData.victimIntoxicationProved === 'tak' || cardData.victimIntoxicationProved === 'odmowa_badania') && (
+            <div className="form-group">
+              <label htmlFor="victimIntoxicationEvidence">
+                {cardData.victimIntoxicationProved === 'odmowa_badania' 
+                  ? 'Informacja o odmowie poddania się badaniu *'
+                  : 'Wskazać dowody stanu nietrzeźwości/odurzenia *'}
+              </label>
+              <textarea
+                id="victimIntoxicationEvidence"
+                name="victimIntoxicationEvidence"
+                value={cardData.victimIntoxicationEvidence}
+                onChange={handleChange}
+                rows="4"
+                placeholder={cardData.victimIntoxicationProved === 'odmowa_badania'
+                  ? 'Data, godzina i okoliczności odmowy poddania się badaniu'
+                  : 'Wyniki badań, zeznania świadków, dokumentacja medyczna, itp.'}
+                required={cardData.victimIntoxicationProved === 'tak' || cardData.victimIntoxicationProved === 'odmowa_badania'}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* VIII. DANE ADMINISTRACYJNE */}
+        <div className="form-section-card">
+          <h3>VIII. Dane administracyjne</h3>
+          
+          <div className="form-group">
+            <label htmlFor="cardReceivedDate">Kartę wypadku odebrano w dniu</label>
+            <input
+              type="date"
+              id="cardReceivedDate"
+              name="cardReceivedDate"
+              value={cardData.cardReceivedDate}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="cardPreparationObstacles">
+              Przeszkody i trudności uniemożliwiające sporządzenie karty wypadku w wymaganym terminie 14 dni
+            </label>
+            <textarea
+              id="cardPreparationObstacles"
+              name="cardPreparationObstacles"
+              value={cardData.cardPreparationObstacles}
+              onChange={handleChange}
+              rows="3"
+              placeholder="Opisać przyczyny opóźnienia (jeśli występują)"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="preparingEntityName">Nazwa podmiotu obowiązanego do sporządzenia karty wypadku *</label>
+            <input
+              type="text"
+              id="preparingEntityName"
+              name="preparingEntityName"
+              value={cardData.preparingEntityName}
+              onChange={handleChange}
+              placeholder="Pełna nazwa pracodawcy/jednostki"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="preparerName">Imię i nazwisko osoby sporządzającej kartę wypadku *</label>
+            <input
+              type="text"
+              id="preparerName"
+              name="preparerName"
+              value={cardData.preparerName}
+              onChange={handleChange}
+              placeholder="Jan Kowalski"
               required
             />
           </div>
