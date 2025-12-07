@@ -1,21 +1,16 @@
-Jasne — poniżej masz **gotowy do wklejenia w README** kompletny, rozszerzony blok Markdown.
-Nie używa żadnych elementów canvas, tylko czysty **Markdown**, który możesz bezpośrednio wkleić do swojego repo.
-
----
-
 # ATLAS_ZANT_HackNation2025 — Rozszerzona Dokumentacja Techniczna
 
 ## 1. Wprowadzenie
 
-System **ATLAS_ZANT_HackNation2025** został zaprojektowany jako kompletny ekosystem wspierający proces obsługi wypadków przy pracy — od zgłoszenia przez poszkodowanego pracownika, po analizę i decyzje biura.
+System **ATLAS_ZANT_HackNation2025** to kompletny ekosystem AI wspierający proces obsługi wypadków przy pracy — od zgłoszenia przez poszkodowanego pracownika, po analizę i decyzje biura ZUS.
 
 Projekt składa się z:
 
-* **Backendu (FastAPI)** — generowanie dokumentów PDF/DOCX, analiza opisów urazu, ekstrakcja danych, logika systemowa.
-* **User Frontend (React)** — formularze i generowanie dokumentów dla pracownika.
-* **Office Frontend (React)** — panel administracyjny dla pracowników biurowych.
+* **Backendu (FastAPI + AI)** — generowanie dokumentów PDF/DOCX, analiza opisów urazu przy użyciu LLM, ekstrakcja danych, automatyczna ocena prawna wypadków.
+* **User Frontend (React)** — wieloetapowe formularze z asystentem AI dla pracownika (ścieżka EWYP i wyjaśnienia poszkodowanego).
+* **Office Frontend (React)** — 7-krokowy panel dla pracowników biurowych z automatyczną oceną prawną i generowaniem uzasadnień.
 
-System został zbudowany modułowo, dzięki czemu jest łatwy w rozwoju, utrzymaniu oraz wdrożeniu w środowiskach produkcyjnych.
+System wykorzystuje modele językowe (Groq API) do automatycznej oceny zgodności opisów urazu z wymogami prawnymi oraz generowania profesjonalnych uzasadnień decyzji.
 
 ---
 
@@ -26,211 +21,326 @@ System został zbudowany modułowo, dzięki czemu jest łatwy w rozwoju, utrzyma
 ```text
  ┌────────────────────────┐         ┌──────────────────────────────┐
  │      USER FRONTEND     │ <-----> │            BACKEND           │
- │        (React)         │         │   FastAPI + PDF/DOCX/AI      │
- └────────────────────────┘         └──────────────────────────────┘
+ │   (React - port 3000)  │         │   FastAPI + LangChain + AI   │
+ └────────────────────────┘         │        (port 8000)           │
+                                    └──────────────────────────────┘
                                           ↑
-                                          │
- ┌────────────────────────┐               │
+                                          │ Groq API
+ ┌────────────────────────┐               │ (LLM)
  │     OFFICE FRONTEND    │ <────────────┘
- │        (React)         │
+ │   (React - port 3001)  │
  └────────────────────────┘
 ```
 
-Backend pełni funkcję centralnego węzła odpowiedzialnego za generowanie dokumentów, ocenę zgłoszeń i komunikację.
+Backend pełni funkcję centralnego węzła odpowiedzialnego za:
+- Generowanie dokumentów PDF/DOCX
+- Ekstrakcję danych z przesłanych dokumentów
+- Ocenę opisów urazu przy użyciu AI (6 komponentów)
+- Ocenę prawną wypadków (4 kryteria ustawowe)
+- Automatyczne generowanie uzasadnień decyzji
 
 ---
 
-## 3. Przepływ Danych (Workflow)
+## 3. Integracja AI / LLM
 
-### 3.1. User Flow
+### 3.1. Wykorzystane technologie AI
 
-1. Pracownik uruchamia aplikację User Path.
-2. Wypełnia formularz zgłoszenia / wyjaśnienia.
-3. Frontend wysyła dane do backendu:
+| Technologia | Zastosowanie |
+|-------------|--------------|
+| **LangChain** | Framework do integracji z LLM |
+| **LangChain-Groq** | Connector do Groq API |
+| **Groq API** | Hosting modeli LLM |
+| **openai/gpt-oss-20b** | Model do oceny opisów urazu |
+| **llama-3.3-70b-versatile** | Model do generowania uzasadnień |
 
-   * `/generate-accident-notification` (PDF)
-   * `/generate-injured-statement` (DOCX)
-4. Backend:
+### 3.2. Funkcje AI w systemie
 
-   * waliduje dane (Pydantic),
-   * wypełnia szablon PDF/DOCX,
-   * odsyła strumieniowo plik.
-5. Użytkownik pobiera dokument.
+| Funkcja | Opis | Prompt |
+|---------|------|--------|
+| `evaluate_injury_description` | Ocenia opis urazu użytkownika pod kątem 6 komponentów (Kiedy, Gdzie, CoCzynił, Jak, Dlaczego, Uraz) | `injury_evaluation_prompt.txt` |
+| `assess_office_accident` | Ocenia wypadek pod kątem 4 kryteriów prawnych (nagłość, przyczyna zewnętrzna, związek z pracą, uraz) | `office_assessment_prompt.txt` |
+| `generate_justification` | Generuje profesjonalne uzasadnienie decyzji na podstawie oceny AI | `justification_prompt.txt` |
+| `extract_pdf_data` | Ekstrakcja ustrukturyzowanych danych z PDF przy użyciu LLM | `pdf_extraction_prompt.txt` |
 
-### 3.2. Office Flow
+### 3.3. Wymagania środowiskowe
 
-1. Pracownik biura otwiera dashboard Office Path.
-2. Może:
-
-   * wczytać opis urazu,
-   * przeanalizować wypadek,
-   * wykonać ocenę.
-3. Backend realizuje:
-
-   * analizę heurystyczną lub AI,
-   * klasyfikację i ocenę ryzyka,
-   * generowanie dokumentów pomocniczych.
-4. Wynik jest wyświetlany w panelu.
+```bash
+export GROQ_API_KEY="your-groq-api-key"
+```
 
 ---
 
-## 4. Backend — Techniczne Szczegóły
+## 4. Przepływ Danych (Workflow)
 
-### 4.1. Technologie
+### 4.1. User Flow — Ścieżka EWYP (11 sekcji)
 
-* **FastAPI (ASGI)**
-* **Pydantic** — modele danych i walidacja
-* **PyMuPDF (pymupdf)** — generowanie PDF
-* **python-docx** — generowanie DOCX
-* **Uvicorn** — serwer ASGI
+1. Pracownik wybiera ścieżkę "EWYP" (formularz ZUS EWYP).
+2. Wypełnia 11 sekcji formularza:
+   - **Sekcja 1-7**: Dane osobowe, adresowe, działalność gospodarcza
+   - **Sekcja 8**: Opis wypadku z **asystentem AI** (real-time feedback)
+   - **Sekcja 9**: Dane świadków (do 3 osób)
+   - **Sekcja 10-11**: Załączniki i deklaracje
+3. AI na bieżąco ocenia opis wypadku pod kątem 6 komponentów:
+   - ✅ **ok** — informacja kompletna
+   - ⚠️ **warning** — wymaga uzupełnienia
+   - ❌ **danger** — brak wymaganej informacji
+4. Po zakończeniu generowany jest PDF (ZUS EWYP).
 
-### 4.2. Moduły
+### 4.2. User Flow — Ścieżka Wyjaśnienia (4 sekcje)
+
+1. Pracownik wybiera ścieżkę "Wyjaśnienia poszkodowanego".
+2. Wypełnia 4 sekcje z danymi wypadku.
+3. Generowany jest dokument DOCX.
+
+### 4.3. Office Flow (7 kroków)
+
+| Krok | Komponent | Opis |
+|------|-----------|------|
+| 1 | `FileUpload` | Upload PDF (wymagany) i DOCX (opcjonalny) |
+| 2 | `CausalDiagram` | Wizualna analiza związków przyczynowych |
+| 3 | `DataConsistency` | Porównanie i walidacja danych między dokumentami |
+| 4 | `EligibilityAssessment` | **Ocena AI** — 4 kryteria prawne wypadku przy pracy |
+| 5 | `ExplanationSection` | Wyjaśnienie decyzji AI |
+| 6 | `OfficialStatement` | Formularz oświadczenia + **automatyczne uzasadnienie AI** |
+| 7 | `AccidentCard` | Karta wypadku (~60 pól) + generowanie DOCX |
+
+### 4.4. Kryteria prawne oceny wypadku
+
+System ocenia wypadek zgodnie z **Art. 3 ust. 1 ustawy z dnia 30 października 2002 r.**:
+
+1. **Nagłość zdarzenia** — czy zdarzenie było nagłe
+2. **Przyczyna zewnętrzna** — czy istniała przyczyna zewnętrzna
+3. **Związek z pracą** — czy zdarzenie było związane z pracą
+4. **Uraz lub śmierć** — czy nastąpił uraz lub śmierć
+
+---
+
+## 5. API Endpoints
+
+### 5.1. Kompletna lista endpointów
+
+| Endpoint | Metoda | Opis |
+|----------|--------|------|
+| `/` | GET | Health check |
+| `/health` | GET | Status zdrowia aplikacji |
+| `/evaluate-injury` | POST | **AI**: Ocena opisu urazu (6 komponentów) |
+| `/assess-workplace-accident` | POST | **AI**: Ocena prawna wypadku (4 kryteria) |
+| `/upload-pdf` | POST | Upload PDF ZUS EWYP, ekstrakcja danych |
+| `/upload-docx` | POST | Upload DOCX wyjaśnień, ekstrakcja danych |
+| `/compare-documents` | POST | Porównanie PDF i DOCX, walidacja spójności |
+| `/generate-accident-notification` | POST | Generowanie wypełnionego PDF ZUS EWYP |
+| `/generate-injured-statement` | POST | Generowanie DOCX wyjaśnień poszkodowanego |
+| `/generate-justification` | POST | **AI**: Generowanie uzasadnienia decyzji |
+| `/generate-accident-card` | POST | Generowanie DOCX karty wypadku |
+
+---
+
+## 6. Backend — Techniczne Szczegóły
+
+### 6.1. Technologie
+
+| Technologia | Zastosowanie |
+|-------------|--------------|
+| **FastAPI** | Framework webowy (ASGI) |
+| **Pydantic** | Walidacja danych i modele |
+| **LangChain + LangChain-Groq** | Integracja z LLM |
+| **PyMuPDF (fitz)** | Generowanie i ekstrakcja PDF |
+| **python-docx** | Generowanie dokumentów DOCX |
+| **pypdf** | Odczyt PDF |
+| **Uvicorn** | Serwer ASGI |
+
+### 6.2. Struktura projektu
 
 ```
 backend/
-├── main.py            # Endpointy FastAPI
-├── services.py        # Logika dokumentów PDF/DOCX
-├── schemas.py         # Modele danych Pydantic
-├── utils/             # Pomocnicze operacje
-└── templates/         # Szablony PDF/DOCX
+├── main.py                        # Endpointy FastAPI
+├── services.py                    # Logika AI, dokumentów, ekstrakcji
+├── schemas.py                     # Modele danych Pydantic
+├── requirements.txt               # Zależności Python
+├── injury_evaluation_prompt.txt   # Prompt AI - ocena urazu
+├── office_assessment_prompt.txt   # Prompt AI - ocena prawna
+├── justification_prompt.txt       # Prompt AI - uzasadnienie
+├── pdf_extraction_prompt.txt      # Prompt AI - ekstrakcja PDF
+├── EWYP_wypelnij_i_wydrukuj.pdf  # Szablon PDF
+└── oswiadczenie_poszkodowanego.docx # Szablon DOCX
 ```
 
 ---
 
-## 5. Modele Danych (Pydantic)
+## 7. Modele Danych (Pydantic)
 
-Backend wykorzystuje modele do walidacji:
+### 7.1. Główne modele
 
-* `AccidentNotificationSchema`
-* `InjuryReportSchema`
-* `StatementSchema`
-* `EvaluationSchema`
+| Model | Zastosowanie |
+|-------|--------------|
+| `WitnessInfo` | Dane świadka (osobowe i adresowe) |
+| `ValidationIssue` | Problem walidacji (pole, poziom, opis) |
+| `ComparisonResponse` | Odpowiedź porównania PDF/DOCX |
+| `ExtractedDocxData` | Dane wyekstrahowane z DOCX |
+| `ExtractedPdfData` | Dane wyekstrahowane z PDF (~100 pól) |
+| `EvaluationComponent` | Pojedynczy komponent oceny (status, opis) |
+| `InjuryEvaluationResult` | Wynik oceny urazu (6 komponentów) |
+| `OfficeAssessmentCriterion` | Pojedyncze kryterium prawne |
+| `OfficeAssessmentResult` | Wynik oceny prawnej (4 kryteria) |
+| `AccidentNotificationRequest` | Request generowania PDF (~50 pól) |
+| `InjuredStatementRequest` | Request generowania DOCX wyjaśnień |
+| `JustificationRequest` | Request generowania uzasadnienia |
+| `AccidentCardRequest` | Request generowania karty wypadku (~60 pól) |
 
-Każde pole ma:
-
-* typ danych,
-* walidator,
-* alias (snake_case → camelCase),
-* wartość domyślną lub `Optional`.
-
-Przykład:
+### 7.2. Przykład modelu oceny AI
 
 ```python
-class InjuryReportSchema(BaseModel):
-    firstName: str
-    lastName: str
-    accidentDate: date
-    description: Optional[str]
+class EvaluationComponent(BaseModel):
+    status: Literal["ok", "warning", "danger"]
+    description: str
+
+class InjuryEvaluationResult(BaseModel):
+    when: EvaluationComponent      # Kiedy
+    where: EvaluationComponent     # Gdzie
+    doing: EvaluationComponent     # Co czynił
+    how: EvaluationComponent       # Jak doszło
+    why: EvaluationComponent       # Dlaczego
+    injury: EvaluationComponent    # Jaki uraz
 ```
 
 ---
 
-## 6. Generowanie Dokumentów
+## 8. User Frontend — Komponenty
 
-### 6.1. PDF (PyMuPDF)
+### 8.1. Ścieżka EWYP
 
-Proces generowania:
+| Komponent | Opis |
+|-----------|------|
+| `Section1` | Dane osobowe poszkodowanego (PESEL, imię, nazwisko, data urodzenia) |
+| `Section2` | Ostatni adres w Polsce (warunkowy) |
+| `Section3` | Adres korespondencyjny (warunkowy) |
+| `Section4` | Informacje o działalności gospodarczej |
+| `Section5` | Informacje o pracy opiekuńczej/niani |
+| `Section6` | Dane zgłaszającego (jeśli inny niż poszkodowany) |
+| `Section7` | Adres korespondencyjny zgłaszającego (warunkowy) |
+| `Section8` | **Opis wypadku z asystentem AI** — real-time feedback |
+| `Section9` | Dane świadków (do 3 osób) |
+| `Section10` | Wybór załączników |
+| `Section11` | Sposób odpowiedzi i deklaracja + pobieranie PDF |
 
-1. Załaduj szablon PDF.
-2. Wypełnij pola metodami:
+### 8.2. Ścieżka Wyjaśnienia
 
-   * `insert_text`
-   * `insert_textbox`
-3. Zapisz wynik do `BytesIO`.
-4. Zwróć w `StreamingResponse`.
-
-Zalety:
-
-* pełna kontrola nad pozycją tekstu,
-* szybkie i lekkie generowanie,
-* brak zewnętrznych zależności typu PDFtk.
-
----
-
-### 6.2. DOCX (python-docx)
-
-Proces:
-
-1. Załaduj szablon `.docx`.
-2. Znajdź placeholdery `{{placeholder}}`.
-3. Wstaw wartości z requestu.
-4. Zapisz i zwróć jako `BytesIO`.
-
-Zalety:
-
-* możliwość generowania tabel, sekcji, akapitów,
-* wysoka stabilność,
-* kompatybilne z Word 2007+.
+| Komponent | Opis |
+|-----------|------|
+| `ExplanationSection1` | Szczegóły wypadku (data, czas, miejsce) |
+| `ExplanationSection2` | Dane osobowe |
+| `ExplanationSection3` | Opis wypadku (z asystentem AI) |
+| `ExplanationSection4` | Podsumowanie i pobieranie DOCX |
 
 ---
 
-## 7. Bezpieczeństwo Systemu
+## 9. Office Frontend — Komponenty
 
-### 7.1. Walidacja
-
-* Każdy endpoint wymusza strukturę danych (Pydantic).
-* Pola niezgodne → kod 422.
-* Walidacja typów i zawartości (np. daty, długość pól).
-
-### 7.2. RODO/GDPR
-
-* Dane są przetwarzane tylko w pamięci.
-* Brak trwałego zapisu danych osobowych.
-* Możliwość anonimizacji.
-
-### 7.3. CORS
-
-* Konfiguracja dopasowana do dwóch frontendów.
-* Kontrola metod i nagłówków.
-
-### 7.4. Hardening
-
-* ukrywanie stacktrace,
-* kontrola ścieżek do plików,
-* limity wielkości uploadowanych PDF.
+| Komponent | Krok | Opis |
+|-----------|------|------|
+| `FileUpload` | 1 | Upload PDF (wymagany) i DOCX (opcjonalny) |
+| `CausalDiagram` | 2 | Wizualizacja związków przyczynowych |
+| `DataConsistency` | 3 | Walidacja spójności danych |
+| `EligibilityAssessment` | 4 | **Ocena AI** — 4 kryteria prawne |
+| `ExplanationSection` | 5 | Wyjaśnienie decyzji AI |
+| `OfficialStatement` | 6 | Oświadczenie + **uzasadnienie AI** |
+| `AccidentCard` | 7 | Karta wypadku (~60 pól) |
 
 ---
 
-## 8. Skalowalność i Wydajność
+## 10. Generowanie Dokumentów
 
-Backend projektowano tak, aby mógł obsługiwać dużą liczbę żądań:
+### 10.1. PDF (PyMuPDF)
 
-* FastAPI działa asynchronicznie.
-* Operacje dokumentowe nie używają dysku — wszystko w RAM.
-* Możliwe wdrożenie w trybie:
+Proces generowania formularza ZUS EWYP:
 
-  * Docker,
-  * Kubernetes,
-  * Serverless (AWS Lambda),
-  * klasyczne VPS.
+1. Załaduj szablon `EWYP_wypelnij_i_wydrukuj.pdf`
+2. Wypełnij pola metodami `insert_text`, `insert_textbox`
+3. Zapisz do `BytesIO`
+4. Zwróć jako `StreamingResponse`
 
-Frontendy mogą być hostowane jako statyczne buildy w CDN.
+### 10.2. DOCX (python-docx)
 
----
+Proces generowania dokumentów Word:
 
-## 9. Możliwości Rozwoju
-
-* Podłączenie dużego modelu językowego do automatycznej interpretacji opisów urazu.
-* Logowanie historii zgłoszeń.
-* Eksport ZIP wielu dokumentów.
-* Wersjonowanie dokumentów.
-* Integracja z usługami OCR.
+1. Załaduj szablon (np. `oswiadczenie_poszkodowanego.docx`)
+2. Znajdź placeholdery `{{placeholder}}`
+3. Zamień na wartości z requestu
+4. Obsługa tabel (karty wypadku)
+5. Zwróć jako `StreamingResponse`
 
 ---
 
-## 10. Deployment (opcjonalna sekcja)
+## 11. Bezpieczeństwo Systemu
 
-### Docker — przykładowa struktura
+### 11.1. Walidacja danych
+
+* Każdy endpoint wymusza strukturę danych (Pydantic)
+* Pola niezgodne → kod 422 z opisem błędu
+* Walidacja typów, formatów dat, długości pól
+
+### 11.2. RODO/GDPR
+
+* Dane przetwarzane tylko w pamięci
+* Brak trwałego zapisu danych osobowych
+* Prompts AI nie zawierają danych osobowych po przetworzeniu
+
+### 11.3. CORS
+
+* Konfiguracja dla dwóch frontendów (port 3000, 3001)
+* Kontrola metod i nagłówków
+
+---
+
+## 12. Instalacja i Uruchomienie
+
+### 12.1. Wymagania
+
+* Python 3.11+
+* Node.js 18+
+* Klucz API Groq (`GROQ_API_KEY`)
+
+### 12.2. Backend
+
+```bash
+cd backend
+pip install -r requirements.txt
+export GROQ_API_KEY="your-api-key"
+uvicorn main:app --reload --port 8000
+```
+
+### 12.3. User Frontend
+
+```bash
+cd user_path/frontend
+npm install
+npm start  # port 3000
+```
+
+### 12.4. Office Frontend
+
+```bash
+cd office_path/frontend
+npm install
+npm start  # port 3001
+```
+
+---
+
+## 13. Deployment
+
+### 13.1. Docker — Backend
 
 ```dockerfile
 FROM python:3.11
 WORKDIR /app
 COPY . .
 RUN pip install -r requirements.txt
+ENV GROQ_API_KEY=""
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-### docker-compose
+### 13.2. docker-compose
 
 ```yaml
 services:
@@ -238,7 +348,48 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+  
+  user-frontend:
+    build: ./user_path/frontend
+    ports:
+      - "3000:3000"
+  
+  office-frontend:
+    build: ./office_path/frontend
+    ports:
+      - "3001:3001"
 ```
 
 ---
+
+## 14. Dodatkowa Dokumentacja
+
+| Plik | Opis |
+|------|------|
+| `DOCX_ENDPOINT_SUMMARY.md` | Dokumentacja endpointów DOCX |
+| `SETUP_PDF_ENDPOINT.md` | Instrukcja konfiguracji PDF |
+| `backend/PDF_GENERATION_ENDPOINT.md` | Szczegóły generowania PDF |
+| `backend/DOCX_GENERATION_ENDPOINT.md` | Szczegóły generowania DOCX |
+| `user_path/frontend/AI_ASSISTANT_DOCUMENTATION.md` | Dokumentacja asystenta AI |
+| `user_path/frontend/SECTIONS_DOCUMENTATION.md` | Dokumentacja sekcji formularza |
+| `user_path/frontend/QUICK_REFERENCE.md` | Szybka referencja |
+
+---
+
+## 15. Możliwości Rozwoju
+
+* 📊 Dashboard analityczny z statystykami zgłoszeń
+* 📧 Integracja z systemem powiadomień email
+* 🔐 Autoryzacja i role użytkowników
+* 📁 Historia i archiwum zgłoszeń
+* 🌐 Wielojęzyczność (internacjonalizacja)
+* 📱 Wersja mobilna aplikacji
+
+---
+
+## 16. Licencja
+
+Projekt stworzony na HackNation 2025.
 
