@@ -160,6 +160,32 @@ class InjuryDescriptionRequest(BaseModel):
     )
 
 
+class CriterionAssessment(BaseModel):
+    """Assessment of a single criterion for office worker evaluation"""
+    status: Literal["ok", "warning", "danger"] = Field(
+        description="Assessment status: ok (fully met), warning (needs clarification), danger (not met or critical issues)"
+    )
+    description: str = Field(
+        description="Detailed Polish language justification referencing legal requirements and suggesting actions if needed"
+    )
+
+
+class OfficeAssessmentResponse(BaseModel):
+    """Complete assessment response for office worker - workplace accident eligibility"""
+    sudden: CriterionAssessment = Field(
+        description="Assessment of sudden event criterion (nagłość zdarzenia)"
+    )
+    external: CriterionAssessment = Field(
+        description="Assessment of external cause leading to injury (przyczyna zewnętrzna)"
+    )
+    work: CriterionAssessment = Field(
+        description="Assessment of work-related connection (związek z pracą)"
+    )
+    injury: CriterionAssessment = Field(
+        description="Assessment of injury or death as a result (uraz lub śmierć)"
+    )
+
+
 class AccidentNotificationRequest(BaseModel):
     """Request model for accident notification PDF generation"""
     # Personal data

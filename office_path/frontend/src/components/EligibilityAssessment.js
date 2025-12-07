@@ -1,145 +1,189 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../config';
 
-function EligibilityAssessment({ data }) {
-  const getDecisionInfo = (decision) => {
-    switch (decision) {
-      case 'approved':
-        return {
-          title: 'Zdarzenie uznane za wypadek przy pracy',
-          color: '#039b45',
-          icon: '✓',
-          description: 'Zdarzenie spełnia wszystkie kryteria wypadku przy pracy zgodnie z obowiązującymi przepisami.'
-        };
-      case 'rejected':
-        return {
-          title: 'Zdarzenie nieuznaane za wypadek przy pracy',
-          color: '#e74c3c',
-          icon: '✗',
-          description: 'Zdarzenie nie spełnia kryteriów wypadku przy pracy.'
-        };
-      case 'investigation_needed':
-        return {
-          title: 'Wymagane postępowanie wyjaśniające',
-          color: '#FF9800',
-          icon: '⚠',
-          description: 'Konieczne uzyskanie dodatkowych dokumentów w celu podjęcia ostatecznej decyzji.'
-        };
-      case 'conditional_approval':
-        return {
-          title: 'Warunkowa akceptacja',
-          color: '#81cb32',
-          icon: '✓',
-          description: 'Zdarzenie może zostać uznane za wypadek przy pracy po dopełnieniu formalności.'
-        };
-      default:
-        return {
-          title: 'Oczekuje na ocenę',
-          color: '#757575',
-          icon: '?',
-          description: 'Trwa analiza dokumentów.'
-        };
+function EligibilityAssessment({ analysisData }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [assessment, setAssessment] = useState(null);
+  const [victimDescription, setVictimDescription] = useState('');
+
+  useEffect(() => {
+    const fetchAssessment = async () => {
+      // Extract victim's description from analysisData
+      const description = analysisData?.extractedData?.accidentDescription || 
+                         analysisData?.extractedData?.explanationText ||
+                         '';
+      
+      setVictimDescription(description);
+
+      if (!description) {
+        setError('Brak opisu zdarzenia do oceny.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(API_ENDPOINTS.ASSESS_WORKPLACE_ACCIDENT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ description }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Nie udało się przeprowadzić oceny');
+        }
+
+        const data = await response.json();
+        setAssessment(data);
+      } catch (err) {
+        setError(err.message);
+        console.error('Error fetching assessment:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssessment();
+  }, [analysisData]);
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'ok': return '#039b45';
+      case 'warning': return '#FFC107';
+      case 'danger': return '#e74c3c';
+      default: return '#757575';
     }
   };
 
-  const decisionInfo = getDecisionInfo(data.decision);
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'ok': return '✓';
+      case 'warning': return '⚠';
+      case 'danger': return '✗';
+      default: return '?';
+    }
+  };
+
+  const [expandedCriteria, setExpandedCriteria] = useState({});
+
+  const toggleDescription = (key) => {
+    setExpandedCriteria(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const criteria = [
+    {
+      key: 'sudden',
+      title: 'Nagłość zdarzenia',
+      fullDescription: 'Wypadek przy pracy jest zdarzeniem nagłym, spowodowanym przez przyczynę zewnętrzną. Przez nagłość rozumiemy natychmiastowe ujawnienie się przyczyny zewnętrznej, która wywołała określone skutki, lub działanie tej przyczyny przez pewien okres, ale nie dłużej niż przez jedną dniówkę roboczą. Zdarzeniem nagłym może być np. wybuch, upadek, zderzenie, porażenie jak również hałas, działanie niskich lub wysokich temperatur albo promieniowania.'
+    },
+    {
+      key: 'external',
+      title: 'Przyczyna zewnętrzna prowadząca do urazu lub śmierci',
+      fullDescription: 'O przyczynie zewnętrznej możemy mówić jeśli do urazu doszło w wyniku oddziaływania na człowieka czynnika występującego poza jego organizmem. Do przyczyn zewnętrznych zaliczamy czynniki działające z zewnątrz, które spowodowały wypadek lub przyczyniły się do jego powstania, np. działanie ruchomych lub ostrych elementów maszyn i urządzeń, energia elektryczna, działanie ekstremalnych temperatur, substancje chemiczne powodujące zatrucie, spadający przedmiot uderzający człowieka, działanie sił natury, nietypowe warunki w miejscu pracy (np. śliska podłoga, porozrzucane przedmioty).'
+    },
+    {
+      key: 'work',
+      title: 'Związek z pracą (przyczynowy, czasowy, miejscowy, funkcjonalny)',
+      fullDescription: 'Między wypadkiem a pracą musi zachodzić ścisły związek przyczynowy, czasowy, miejscowy i funkcjonalny. Chronione z tytułu ubezpieczenia wypadkowego są te zdarzenia, do których doszło podczas wykonywania zwykłych czynności związanych z prowadzeniem pozarolniczej działalności. Musi być spełniony związek: przyczynowy (praca doprowadziła do wypadku), czasowy (podczas godzin pracy), miejscowy (w miejscu pracy) i funkcjonalny (wykonywanie czynności służbowych).'
+    },
+    {
+      key: 'injury',
+      title: 'Skutek - uraz lub śmierć',
+      fullDescription: 'Urazem jest uszkodzenie tkanek ciała (np. skaleczenie, stłuczenie) lub narządów (np. zwichnięcie kończyny, wstrząśnienie mózgu) człowieka wskutek działania czynnika zewnętrznego. Skutkiem wypadku może być także śmierć poszkodowanego.'
+    }
+  ];
+
+  if (loading) {
+    return (
+      <div className="eligibility-section">
+        <h2>Ocena Kwalifikowalności do Ubezpieczenia</h2>
+        <div className="loading-overlay">
+          <div className="loading-spinner"></div>
+          <span>Analizuję opis zdarzenia...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="eligibility-section">
+        <h2>Ocena Kwalifikowalności do Ubezpieczenia</h2>
+        <div className="error-message">
+          {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="eligibility-section">
       <h2>Ocena Kwalifikowalności do Ubezpieczenia</h2>
-      
-      <div 
-        className="decision-box"
-        style={{ borderColor: decisionInfo.color }}
-      >
-        <div 
-          className="decision-header"
-          style={{ backgroundColor: decisionInfo.color }}
-        >
-          <span className="decision-icon">{decisionInfo.icon}</span>
-          <h3>{decisionInfo.title}</h3>
-        </div>
-        <div className="decision-body">
-          <p>{decisionInfo.description}</p>
+      <p className="section-description">
+        Automatyczna ocena opisu zdarzenia pod kątem spełnienia kryteriów wypadku przy pracy
+      </p>
+
+      {/* Victim's Description */}
+      <div className="victim-description-frame">
+        <h3>Opis zdarzenia od poszkodowanego:</h3>
+        <div className="description-content">
+          {victimDescription}
         </div>
       </div>
 
-      {data.decision === 'investigation_needed' && data.missingDocuments && (
-        <div className="missing-documents">
-          <h3>Wymagane dodatkowe dokumenty:</h3>
-          <ul>
-            {data.missingDocuments.map((doc, idx) => (
-              <li key={idx}>
-                <span className="doc-icon">📄</span>
-                {doc}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {data.requiresZUSOpinion && (
-        <div className="zus-opinion-box">
-          <div className="alert-icon">⚕️</div>
-          <div className="alert-content">
-            <h3>Wymagana opinia Głównego Lekarza Orzecznika ZUS</h3>
-            <p>
-              W przypadku wątpliwości, czy doznany wskutek wypadku uraz spełnia 
-              kryteria definicyjne wypadku przy pracy, konieczne jest pozyskanie 
-              opinii Głównego Lekarza Orzecznika ZUS.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {data.validationIssues && data.validationIssues.length > 0 && (
-        <div className="validation-issues">
-          <h3>Wykryte problemy z danymi:</h3>
-          {data.validationIssues.map((issue, idx) => (
+      {/* Criteria Assessment Grid */}
+      <div className="criteria-assessment-grid">
+        {criteria.map(criterion => {
+          const criterionData = assessment[criterion.key];
+          const color = getStatusColor(criterionData.status);
+          const icon = getStatusIcon(criterionData.status);
+          const isExpanded = expandedCriteria[criterion.key];
+          
+          return (
             <div 
-              key={idx}
-              className={`validation-issue ${issue.severity}`}
+              key={criterion.key}
+              className="criterion-card"
+              style={{ borderColor: color }}
             >
-              <span className="severity-icon">
-                {issue.severity === 'error' ? '🔴' : issue.severity === 'warning' ? '🟡' : 'ℹ️'}
-              </span>
-              <div className="issue-content">
-                <strong>{issue.field}:</strong> {issue.message}
-                {issue.pdf_value && (
-                  <div className="value-comparison">
-                    <span className="value-label">PDF:</span> <code>{issue.pdf_value}</code>
-                    {issue.docx_value && (
-                      <>
-                        <span className="value-label">DOCX:</span> <code>{issue.docx_value}</code>
-                      </>
-                    )}
-                  </div>
-                )}
+              <div className="criterion-header" style={{ backgroundColor: color }}>
+                <span className="criterion-icon">{icon}</span>
+                <h3>{criterion.title}</h3>
+              </div>
+              <div className="criterion-body">
+                <div className="criterion-assessment">
+                  <strong>Ocena asystenta AI:</strong>
+                  <p>{criterionData.description}</p>
+                </div>
+                <div className="criterion-legal-toggle">
+                  <button 
+                    className="toggle-description-btn"
+                    onClick={() => toggleDescription(criterion.key)}
+                  >
+                    {isExpanded ? '▼ Ukryj wymóg prawny' : '▶ Pokaż wymóg prawny'}
+                  </button>
+                  {isExpanded && (
+                    <div className="criterion-full-desc">
+                      <p>{criterion.fullDescription}</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
-      <div className="criteria-checklist">
-        <h3>Kryteria wypadku przy pracy:</h3>
-        <div className="checklist">
-          <div className="check-item">
-            <input type="checkbox" id="criterion1" defaultChecked />
-            <label htmlFor="criterion1">Nagłe zdarzenie wywołane przyczyną zewnętrzną</label>
-          </div>
-          <div className="check-item">
-            <input type="checkbox" id="criterion2" defaultChecked />
-            <label htmlFor="criterion2">Zdarzenie związane z pracą</label>
-          </div>
-          <div className="check-item">
-            <input type="checkbox" id="criterion3" />
-            <label htmlFor="criterion3">Spowodowało uraz lub śmierć</label>
-          </div>
-          <div className="check-item">
-            <input type="checkbox" id="criterion4" defaultChecked />
-            <label htmlFor="criterion4">Podczas lub w związku z wykonywaniem zwykłych czynności</label>
-          </div>
-        </div>
+      {/* Summary Information Box */}
+      <div className="info-message">
+        <strong>ℹ️ Informacja:</strong> Zdarzenie powinno zostać uznane za wypadek przy pracy jeżeli spełnia 
+        wszystkie powyższe kryteria: było zdarzeniem nagłym, spowodowanym przez przyczynę zewnętrzną, 
+        która doprowadziła do urazu lub śmierci, i zachodzi ścisły związek przyczynowy, czasowy, 
+        miejscowy i funkcjonalny z wykonywaną pracą.
       </div>
     </div>
   );

@@ -9,7 +9,9 @@ from schemas import (
     ValidationIssue,
     DataComparisonResponse,
     AccidentNotificationRequest,
-    InjuredStatementRequest
+    InjuredStatementRequest,
+    OfficeAssessmentResponse,
+    CriterionAssessment
 )
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 import json
@@ -48,6 +50,9 @@ with open("injury_evaluation_prompt.txt", "r", encoding="utf-8") as file:
 
 with open("pdf_extraction_prompt.txt", "r", encoding="utf-8") as file:
     pdf_extraction_prompt = file.read()
+
+with open("office_assessment_prompt.txt", "r", encoding="utf-8") as file:
+    office_assessment_prompt = file.read()
 
 def evaluate_injury_description(user_msg: str) -> InjuryEvaluationResponse:
     try:
@@ -91,6 +96,48 @@ def evaluate_injury_description(user_msg: str) -> InjuryEvaluationResponse:
             Injury=ComponentEvaluation(
                 Status="danger",
                 Description="Wystąpił błąd podczas analizy."
+            )
+        )
+
+
+def assess_workplace_accident(description: str) -> OfficeAssessmentResponse:
+    """
+    Office worker assessment - evaluate if event qualifies as workplace accident
+    according to Polish labor law criteria
+    """
+    try:
+        structured_llm = llm.with_structured_output(
+            schema=OfficeAssessmentResponse,
+            method="json_mode"
+        )
+
+        messages = [
+            SystemMessage(content=office_assessment_prompt),
+            HumanMessage(content=f"Oceń następujące zdarzenie pod kątem spełnienia kryteriów wypadku przy pracy. Zwróć odpowiedź w formacie JSON zgodnym z wymaganym schematem.\n\nOpis zdarzenia:\n{description}")
+        ]
+
+        result = structured_llm.invoke(messages)
+        return result
+    
+    except Exception as e:
+        print(f"Error in assess_workplace_accident: {e}")
+        # Return default error response
+        return OfficeAssessmentResponse(
+            sudden=CriterionAssessment(
+                status="danger",
+                description="Wystąpił błąd podczas analizy. Spróbuj ponownie lub skontaktuj się z administratorem."
+            ),
+            external=CriterionAssessment(
+                status="danger",
+                description="Wystąpił błąd podczas analizy systemu."
+            ),
+            work=CriterionAssessment(
+                status="danger",
+                description="Wystąpił błąd podczas analizy systemu."
+            ),
+            injury=CriterionAssessment(
+                status="danger",
+                description="Wystąpił błąd podczas analizy systemu."
             )
         )
 

@@ -168,7 +168,7 @@ function App() {
 
         {currentStep === 4 && analysisData && (
           <div>
-            <EligibilityAssessment data={analysisData.eligibility} />
+            <EligibilityAssessment analysisData={analysisData} />
             <button className="next-btn" onClick={() => setCurrentStep(5)}>Dalej</button>
           </div>
         )}

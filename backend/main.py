@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 from services import (
     evaluate_injury_description, 
+    assess_workplace_accident,
     extract_pdf_data, 
     extract_docx_explanation,
     compare_pdf_docx_data,
@@ -36,6 +37,19 @@ async def health():
 async def evaluate_injury(request: dict):
     description = request.get("description", "")
     result = evaluate_injury_description(description)
+    return result
+
+@app.post("/assess-workplace-accident")
+async def assess_accident(request: dict):
+    """
+    Office worker endpoint - assess if event qualifies as workplace accident
+    according to Polish labor law (4 criteria: sudden, external, work-related, injury)
+    """
+    description = request.get("description", "")
+    if not description:
+        raise HTTPException(status_code=400, detail="Description is required")
+    
+    result = assess_workplace_accident(description)
     return result
 
 @app.post("/upload-pdf")
