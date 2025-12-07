@@ -242,11 +242,3 @@ services:
 
 ---
 
-Jeśli chcesz, mogę też przygotować:
-
-* pełne **OpenAPI 3.1 YAML** do wklejenia,
-* gotowy **Dockerfile** dla frontendu i backendu,
-* sekcję **testów jednostkowych pytest**,
-* **diagram architektury C4**.
-
-Wystarczy, że powiesz „tak, dawaj dalej”.
