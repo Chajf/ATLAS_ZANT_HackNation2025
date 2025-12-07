@@ -29,7 +29,7 @@ function Section1({ formData, updateFormData, onNext }) {
           <label className="required">PESEL</label>
           <input
             type="text"
-            value={formData.pesel}
+            value={formData.pesel || ''}
             onChange={(e) => updateFormData('pesel', e.target.value)}
             placeholder="Wprowadź numer PESEL"
             maxLength="11"
@@ -41,7 +41,7 @@ function Section1({ formData, updateFormData, onNext }) {
           <div className="form-group">
             <label className="required">Rodzaj dokumentu</label>
             <select
-              value={formData.documentType}
+              value={formData.documentType || ''}
               onChange={(e) => updateFormData('documentType', e.target.value)}
               required
             >
@@ -56,7 +56,7 @@ function Section1({ formData, updateFormData, onNext }) {
             <label>Seria</label>
             <input
               type="text"
-              value={formData.documentSeries}
+              value={formData.documentSeries || ''}
               onChange={(e) => updateFormData('documentSeries', e.target.value)}
               placeholder="Seria"
             />
@@ -66,7 +66,7 @@ function Section1({ formData, updateFormData, onNext }) {
             <label className="required">Numer</label>
             <input
               type="text"
-              value={formData.documentNumber}
+              value={formData.documentNumber || ''}
               onChange={(e) => updateFormData('documentNumber', e.target.value)}
               placeholder="Numer"
               required
@@ -79,7 +79,7 @@ function Section1({ formData, updateFormData, onNext }) {
             <label className="required">Imię</label>
             <input
               type="text"
-              value={formData.firstName}
+              value={formData.firstName || ''}
               onChange={(e) => updateFormData('firstName', e.target.value)}
               placeholder="Wprowadź imię"
               required
@@ -90,7 +90,7 @@ function Section1({ formData, updateFormData, onNext }) {
             <label className="required">Nazwisko</label>
             <input
               type="text"
-              value={formData.lastName}
+              value={formData.lastName || ''}
               onChange={(e) => updateFormData('lastName', e.target.value)}
               placeholder="Wprowadź nazwisko"
               required
@@ -103,7 +103,7 @@ function Section1({ formData, updateFormData, onNext }) {
             <label className="required">Data urodzenia</label>
             <input
               type="date"
-              value={formData.birthDate}
+              value={formData.birthDate || ''}
               onChange={(e) => updateFormData('birthDate', e.target.value)}
               required
             />
@@ -113,7 +113,7 @@ function Section1({ formData, updateFormData, onNext }) {
             <label className="required">Miejsce urodzenia</label>
             <input
               type="text"
-              value={formData.birthPlace}
+              value={formData.birthPlace || ''}
               onChange={(e) => updateFormData('birthPlace', e.target.value)}
               placeholder="Wprowadź miejsce urodzenia"
               required
@@ -125,7 +125,7 @@ function Section1({ formData, updateFormData, onNext }) {
           <label>Numer telefonu (dobrowolne)</label>
           <input
             type="tel"
-            value={formData.phoneNumber}
+            value={formData.phoneNumber || ''}
             onChange={(e) => updateFormData('phoneNumber', e.target.value)}
             placeholder="+48 123 456 789"
           />
@@ -139,7 +139,7 @@ function Section1({ formData, updateFormData, onNext }) {
           <label className="required">Ulica</label>
           <input
             type="text"
-            value={formData.street}
+            value={formData.street || ''}
             onChange={(e) => updateFormData('street', e.target.value)}
             placeholder="Wprowadź nazwę ulicy"
             required
@@ -151,7 +151,7 @@ function Section1({ formData, updateFormData, onNext }) {
             <label className="required">Numer domu</label>
             <input
               type="text"
-              value={formData.houseNumber}
+              value={formData.houseNumber || ''}
               onChange={(e) => updateFormData('houseNumber', e.target.value)}
               placeholder="np. 12"
               required
@@ -162,7 +162,7 @@ function Section1({ formData, updateFormData, onNext }) {
             <label>Numer lokalu</label>
             <input
               type="text"
-              value={formData.apartmentNumber}
+              value={formData.apartmentNumber || ''}
               onChange={(e) => updateFormData('apartmentNumber', e.target.value)}
               placeholder="np. 5"
             />
@@ -174,7 +174,7 @@ function Section1({ formData, updateFormData, onNext }) {
             <label className="required">Kod pocztowy</label>
             <input
               type="text"
-              value={formData.postalCode}
+              value={formData.postalCode || ''}
               onChange={(e) => updateFormData('postalCode', e.target.value)}
               placeholder="00-000"
               maxLength="6"
@@ -186,7 +186,7 @@ function Section1({ formData, updateFormData, onNext }) {
             <label className="required">Miejscowość</label>
             <input
               type="text"
-              value={formData.city}
+              value={formData.city || ''}
               onChange={(e) => updateFormData('city', e.target.value)}
               placeholder="Wprowadź miejscowość"
               required
@@ -198,7 +198,7 @@ function Section1({ formData, updateFormData, onNext }) {
           <label>Nazwa państwa</label>
           <input
             type="text"
-            value={formData.country}
+            value={formData.country || ''}
             onChange={(e) => updateFormData('country', e.target.value)}
             placeholder="Polska"
           />
@@ -221,7 +221,7 @@ function Section1({ formData, updateFormData, onNext }) {
                 checked={formData.isCorrespondenceAddress === 'Tak'}
                 onChange={(e) => updateFormData('isCorrespondenceAddress', e.target.value)}
               />
-              <label htmlFor="corr-yes">Tak</label>
+              <label htmlFor="corr-yes">✓ Tak</label>
             </div>
             <div className="radio-option">
               <input
@@ -232,7 +232,7 @@ function Section1({ formData, updateFormData, onNext }) {
                 checked={formData.isCorrespondenceAddress === 'Nie'}
                 onChange={(e) => updateFormData('isCorrespondenceAddress', e.target.value)}
               />
-              <label htmlFor="corr-no">Nie</label>
+              <label htmlFor="corr-no">✗ Nie</label>
             </div>
           </div>
         </div>

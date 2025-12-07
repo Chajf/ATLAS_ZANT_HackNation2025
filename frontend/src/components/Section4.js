@@ -35,7 +35,7 @@ function Section4({ formData, updateFormData, onNext, onPrev }) {
                 checked={formData.hasBusinessActivity === 'Tak'}
                 onChange={(e) => updateFormData('hasBusinessActivity', e.target.value)}
               />
-              <label htmlFor="business-yes">Tak</label>
+              <label htmlFor="business-yes">✓ Tak</label>
             </div>
             <div className="radio-option">
               <input
@@ -46,7 +46,7 @@ function Section4({ formData, updateFormData, onNext, onPrev }) {
                 checked={formData.hasBusinessActivity === 'Nie'}
                 onChange={(e) => updateFormData('hasBusinessActivity', e.target.value)}
               />
-              <label htmlFor="business-no">Nie</label>
+              <label htmlFor="business-no">✗ Nie</label>
             </div>
           </div>
         </div>

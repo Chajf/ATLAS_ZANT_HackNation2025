@@ -39,64 +39,80 @@ function Section10({ formData, updateFormData, onNext, onPrev }) {
         </h3>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <div className="form-group" style={{ marginBottom: '0.75rem' }}>
-            <label style={{ display: 'flex', alignItems: 'start', cursor: 'pointer', gap: '0.5rem' }}>
+          <div 
+            className={`checkbox-card ${formData.attachHospitalCard ? 'checked' : ''}`}
+            onClick={() => handleCheckboxChange('attachHospitalCard', !formData.attachHospitalCard)}
+          >
+            <div className="checkbox-card-checkbox">
               <input
                 type="checkbox"
                 checked={formData.attachHospitalCard || false}
-                onChange={(e) => handleCheckboxChange('attachHospitalCard', e.target.checked)}
-                style={{ marginTop: '0.25rem', cursor: 'pointer', flexShrink: 0 }}
+                onChange={(e) => e.stopPropagation()}
+                readOnly
               />
-              <span>
-                Kserokopia karty informacyjnej ze szpitala/zaświadczenia o udzieleniu pierwszej pomocy 
-                z pogotowia ratunkowego wraz z wywiadem
-              </span>
-            </label>
+              <span className="checkmark">✓</span>
+            </div>
+            <div className="checkbox-card-content">
+              Kserokopia karty informacyjnej ze szpitala/zaświadczenia o udzieleniu pierwszej pomocy 
+              z pogotowia ratunkowego wraz z wywiadem
+            </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: '0.75rem' }}>
-            <label style={{ display: 'flex', alignItems: 'start', cursor: 'pointer', gap: '0.5rem' }}>
+          <div 
+            className={`checkbox-card ${formData.attachProsecutorDecision ? 'checked' : ''}`}
+            onClick={() => handleCheckboxChange('attachProsecutorDecision', !formData.attachProsecutorDecision)}
+          >
+            <div className="checkbox-card-checkbox">
               <input
                 type="checkbox"
                 checked={formData.attachProsecutorDecision || false}
-                onChange={(e) => handleCheckboxChange('attachProsecutorDecision', e.target.checked)}
-                style={{ marginTop: '0.25rem', cursor: 'pointer', flexShrink: 0 }}
+                onChange={(e) => e.stopPropagation()}
+                readOnly
               />
-              <span>
-                Kserokopia postanowienia prokuratury o wszczęciu postępowania karnego lub 
-                zawieszeniu/umorzeniu postępowania
-              </span>
-            </label>
+              <span className="checkmark">✓</span>
+            </div>
+            <div className="checkbox-card-content">
+              Kserokopia postanowienia prokuratury o wszczęciu postępowania karnego lub 
+              zawieszeniu/umorzeniu postępowania
+            </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: '0.75rem' }}>
-            <label style={{ display: 'flex', alignItems: 'start', cursor: 'pointer', gap: '0.5rem' }}>
+          <div 
+            className={`checkbox-card ${formData.attachDeathCertificate ? 'checked' : ''}`}
+            onClick={() => handleCheckboxChange('attachDeathCertificate', !formData.attachDeathCertificate)}
+          >
+            <div className="checkbox-card-checkbox">
               <input
                 type="checkbox"
                 checked={formData.attachDeathCertificate || false}
-                onChange={(e) => handleCheckboxChange('attachDeathCertificate', e.target.checked)}
-                style={{ marginTop: '0.25rem', cursor: 'pointer', flexShrink: 0 }}
+                onChange={(e) => e.stopPropagation()}
+                readOnly
               />
-              <span>
-                Kserokopia statystycznej karty zgonu lub zaświadczenie lekarskie stwierdzające przyczynę zgonu, 
-                skrócony odpis aktu zgonu (w przypadku wypadku ze skutkiem śmiertelnym)
-              </span>
-            </label>
+              <span className="checkmark">✓</span>
+            </div>
+            <div className="checkbox-card-content">
+              Kserokopia statystycznej karty zgonu lub zaświadczenie lekarskie stwierdzające przyczynę zgonu, 
+              skrócony odpis aktu zgonu (w przypadku wypadku ze skutkiem śmiertelnym)
+            </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: '0.75rem' }}>
-            <label style={{ display: 'flex', alignItems: 'start', cursor: 'pointer', gap: '0.5rem' }}>
+          <div 
+            className={`checkbox-card ${formData.attachRightToIssueCard ? 'checked' : ''}`}
+            onClick={() => handleCheckboxChange('attachRightToIssueCard', !formData.attachRightToIssueCard)}
+          >
+            <div className="checkbox-card-checkbox">
               <input
                 type="checkbox"
                 checked={formData.attachRightToIssueCard || false}
-                onChange={(e) => handleCheckboxChange('attachRightToIssueCard', e.target.checked)}
-                style={{ marginTop: '0.25rem', cursor: 'pointer', flexShrink: 0 }}
+                onChange={(e) => e.stopPropagation()}
+                readOnly
               />
-              <span>
-                Dokumenty potwierdzające prawo do wydania karty wypadku osobie innej niż poszkodowany 
-                (m.in. skrócony odpis aktu urodzenia, skrócony odpis aktu małżeństwa, pełnomocnictwo)
-              </span>
-            </label>
+              <span className="checkmark">✓</span>
+            </div>
+            <div className="checkbox-card-content">
+              Dokumenty potwierdzające prawo do wydania karty wypadku osobie innej niż poszkodowany 
+              (m.in. skrócony odpis aktu urodzenia, skrócony odpis aktu małżeństwa, pełnomocnictwo)
+            </div>
           </div>
         </div>
 
@@ -107,19 +123,10 @@ function Section10({ formData, updateFormData, onNext, onPrev }) {
             onChange={(e) => updateFormData('otherAttachments', e.target.value)}
             placeholder="Podaj jakie inne dokumenty dołączasz (np. dokumenty dotyczące udzielonej pomocy medycznej, umowa na wykonywaną usługę, faktura, rachunek, notatka z policji, ksero mandatu karnego itp.)"
             rows="3"
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              border: '2px solid #e0e0e0',
-              borderRadius: '6px',
-              fontSize: '1rem',
-              fontFamily: 'inherit',
-              resize: 'vertical'
-            }}
           />
         </div>
 
-        <h3 style={{ color: '#333', margin: '2rem 0 1rem', fontSize: '1.1rem' }}>
+        <h3 className="subsection-title" style={{ marginTop: '2rem' }}>
           Dokumenty do dostarczenia później
         </h3>
 

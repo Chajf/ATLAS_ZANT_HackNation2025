@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './App.css';
+import PathSelection from './components/PathSelection';
 import Section1 from './components/Section1';
 import Section2 from './components/Section2';
 import Section3 from './components/Section3';
@@ -12,8 +13,13 @@ import Section9 from './components/Section9';
 import Section10 from './components/Section10';
 import Section11 from './components/Section11';
 import FeedbackSection from './components/FeedbackSection';
+import ExplanationSection1 from './components/ExplanationSection1';
+import ExplanationSection2 from './components/ExplanationSection2';
+import ExplanationSection3 from './components/ExplanationSection3';
+import ExplanationSection4 from './components/ExplanationSection4';
 
 function App() {
+  const [selectedPath, setSelectedPath] = useState(null); // null, 'ewyp', 'explanation'
   const [currentSection, setCurrentSection] = useState(1);
   const [formData, setFormData] = useState({
     // Section 1 - Victim's personal data
@@ -332,10 +338,177 @@ function App() {
     return null;
   };
 
+  const handlePathSelection = (path) => {
+    setSelectedPath(path);
+    setCurrentSection(1);
+  };
+
+  const handleBackToSelection = () => {
+    setSelectedPath(null);
+    setCurrentSection(1);
+  };
+
+  // Jeśli nie wybrano ścieżki, pokaż ekran wyboru
+  if (!selectedPath) {
+    return (
+      <div className="App">
+        <header className="app-header" style={{ marginBottom: '2rem' }}>
+          <h1>ATLAS ZANT</h1>
+        </header>
+        
+        <main className="main-content">
+          <PathSelection onSelectPath={handlePathSelection} />
+        </main>
+        
+        <footer className="app-footer">
+          <p>System do zgłaszania wypadków przy pracy - ATLAS ZANT</p>
+        </footer>
+      </div>
+    );
+  }
+
+  // Funkcja renderująca sekcje dla ścieżki Wyjaśnień
+  const renderExplanationSection = () => {
+    switch(currentSection) {
+      case 1:
+        return (
+          <ExplanationSection1
+            formData={formData}
+            updateFormData={updateFormData}
+            onNext={nextSection}
+          />
+        );
+      case 2:
+        return (
+          <ExplanationSection2
+            formData={formData}
+            updateFormData={updateFormData}
+            onNext={nextSection}
+            onPrev={prevSection}
+          />
+        );
+      case 3:
+        return (
+          <ExplanationSection3
+            formData={formData}
+            updateFormData={updateFormData}
+            onNext={nextSection}
+            onPrev={prevSection}
+          />
+        );
+      case 4:
+        return (
+          <ExplanationSection4
+            formData={formData}
+            onPrev={prevSection}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  const handleBackToHome = () => {
+    const confirmMessage = 'Czy na pewno chcesz wrócić do strony głównej?\n\nWszystkie wprowadzone dane zostaną utracone!';
+    if (window.confirm(confirmMessage)) {
+      setSelectedPath(null);
+      setCurrentSection(1);
+      // Reset formData
+      setFormData({
+        // Reset wszystkich pól
+      });
+    }
+  };
+
+  // Jeśli wybrano ścieżkę "explanation"
+  if (selectedPath === 'explanation') {
+    const totalSections = 4;
+    
+    return (
+      <div className="App">
+        <header className="app-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+            <button 
+              onClick={handleBackToHome}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: 'none',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                </svg>
+                Wróć do strony głównej
+              </span>
+            </button>
+            <h1>Zapis Wyjaśnień Poszkodowanego</h1>
+          </div>
+          <div className="progress-bar">
+            <div 
+              className="progress-fill" 
+              style={{ width: `${(currentSection / totalSections) * 100}%` }}
+            />
+          </div>
+          <p className="section-indicator">Sekcja {currentSection} z {totalSections}</p>
+        </header>
+        
+        <main className="main-content">
+          {renderExplanationSection()}
+        </main>
+        
+        <footer className="app-footer">
+          <p>System do zgłaszania wypadków przy pracy - ATLAS ZANT</p>
+        </footer>
+      </div>
+    );
+  }
+
+  // Ścieżka EWYP - istniejący formularz
   return (
     <div className="App">
       <header className="app-header">
-        <h1>ZANT - Zgłoszenie Wypadku przy Pracy</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+          <button 
+            onClick={handleBackToHome}
+            style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: 'none',
+              color: 'white',
+              padding: '0.5rem 1rem',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+              </svg>
+              Wróć do strony głównej
+            </span>
+          </button>
+          <h1>ZANT - Zawiadomienie o Wypadku przy Pracy (EWYP)</h1>
+        </div>
         <div className="progress-bar">
           <div 
             className="progress-fill" 

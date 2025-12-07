@@ -21,6 +21,7 @@ async def health():
     return {"status": "healthy"}
 
 @app.post("/evaluate-injury")
-async def evaluate_injury(user_msg: str):
-    result = evaluate_injury_description(user_msg)
+async def evaluate_injury(request: dict):
+    description = request.get("description", "")
+    result = evaluate_injury_description(description)
     return result

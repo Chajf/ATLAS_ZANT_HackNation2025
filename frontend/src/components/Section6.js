@@ -214,7 +214,7 @@ function Section6({ formData, updateFormData, onNext, onPrev }) {
                   checked={formData.isNotifierCorrespondenceAddress === 'Tak'}
                   onChange={(e) => updateFormData('isNotifierCorrespondenceAddress', e.target.value)}
                 />
-                <label htmlFor="notifier-corr-yes">Tak</label>
+                <label htmlFor="notifier-corr-yes">✓ Tak</label>
               </div>
               <div className="radio-option">
                 <input
@@ -225,7 +225,7 @@ function Section6({ formData, updateFormData, onNext, onPrev }) {
                   checked={formData.isNotifierCorrespondenceAddress === 'Nie'}
                   onChange={(e) => updateFormData('isNotifierCorrespondenceAddress', e.target.value)}
                 />
-                <label htmlFor="notifier-corr-no">Nie</label>
+                <label htmlFor="notifier-corr-no">✗ Nie</label>
               </div>
             </div>
           </div>
@@ -312,7 +312,7 @@ function Section6({ formData, updateFormData, onNext, onPrev }) {
                     checked={formData.isNotifierLastPolandCorrespondenceAddress === 'Tak'}
                     onChange={(e) => updateFormData('isNotifierLastPolandCorrespondenceAddress', e.target.value)}
                   />
-                  <label htmlFor="notifier-poland-corr-yes">Tak</label>
+                  <label htmlFor="notifier-poland-corr-yes">✓ Tak</label>
                 </div>
                 <div className="radio-option">
                   <input
@@ -323,7 +323,7 @@ function Section6({ formData, updateFormData, onNext, onPrev }) {
                     checked={formData.isNotifierLastPolandCorrespondenceAddress === 'Nie'}
                     onChange={(e) => updateFormData('isNotifierLastPolandCorrespondenceAddress', e.target.value)}
                   />
-                  <label htmlFor="notifier-poland-corr-no">Nie</label>
+                  <label htmlFor="notifier-poland-corr-no">✗ Nie</label>
                 </div>
               </div>
             </div>

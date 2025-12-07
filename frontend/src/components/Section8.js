@@ -2,78 +2,147 @@ import React, { useState, useEffect } from 'react';
 
 function Section8({ formData, updateFormData, onNext, onPrev }) {
   const [analysis, setAnalysis] = useState({
-    hasWhen: false,
-    hasWhere: false,
-    hasWhatDoing: false,
-    hasHowHappened: false,
-    hasWhyCause: false,
-    hasConsequence: false
+    when: 'danger',
+    where: 'danger',
+    whatDoing: 'danger',
+    howHappened: 'danger',
+    whyCause: 'danger',
+    consequence: 'danger',
+    whenDesc: '',
+    whereDesc: '',
+    whatDoingDesc: '',
+    howHappenedDesc: '',
+    whyCauseDesc: '',
+    consequenceDesc: ''
   });
   
   const [aiRecommendations, setAiRecommendations] = useState([]);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isTextModified, setIsTextModified] = useState(false);
 
-  // Mock API - symulacja wywołania asystenta AI
+  // Konfiguracja API URL
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+  // Wywołanie prawdziwego API
   const callAIAssistant = async (description) => {
     setIsAnalyzing(true);
     
-    // Symulacja opóźnienia API (500ms)
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Mock odpowiedzi od API
-    const mockApiResponse = {
-      aspects: [
-        {
-          name: 'when',
-          status: /(\d{1,2}:\d{2}|godzin|około|o\s+\d|rano|wieczór|po południu|dnia|w dniu|podczas|w trakcie|w momencie gdy)/i.test(description) ? 'ok' : 'missing',
-          userMessage: 'Dodaj precyzyjną godzinę wystąpienia wypadku. Przykład: "O godzinie 14:30, podczas..." lub "Około godziny 10:00 rano..."'
+    try {
+      const response = await fetch(`${API_URL}/evaluate-injury`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          name: 'where',
-          status: /(w miejscu|na stanowisku|w pomieszczeniu|w hali|w biurze|na|w|przy|obok|znajduje się|zlokalizow|lokalizacja|obszar|miejsce|strefa)/i.test(description) ? 'ok' : 'missing',
-          userMessage: 'Wskaż dokładną lokalizację: nazwę pomieszczenia, halę, stanowisko pracy lub konkretny obszar. Przykład: "W hali produkcyjnej nr 2, przy stanowisku pakowania..."'
-        },
-        {
-          name: 'what_doing',
-          status: /(wykonywał|wykonywała|pracował|pracowała|zajmował się|zajmowała się|obsługiwał|obsługiwała|przygotowywał|przygotowywała|realizował|realizowała|podczas|w trakcie)/i.test(description) ? 'ok' : 'missing',
-          userMessage: 'Opisz szczegółowo, co dokładnie robiła osoba poszkodowana w momencie wypadku. Przykład: "Pracownik zajmował się pakowaniem produktów na palety..."'
-        },
-        {
-          name: 'how_happened',
-          status: /(nagle|następnie|po czym|w wyniku|wówczas|wtedy|w efekcie|potem|później|najpierw|za chwilę|niespodziewanie|nieoczekiwanie)/i.test(description) ? 'ok' : 'incomplete',
-          userMessage: 'Opisz krok po kroku przebieg wypadku. Użyj słów typu: "najpierw", "następnie", "nagle", "w wyniku czego".'
-        },
-        {
-          name: 'why_cause',
-          status: /(ponieważ|dlatego że|z powodu|z uwagi|ze względu|spowodowane|przyczyna|wynika|na skutek|w wyniku|przez co|wobec czego)/i.test(description) ? 'ok' : 'missing',
-          userMessage: 'Wyjaśnij, co było bezpośrednią przyczyną wypadku. Przykład: "Wypadek wydarzył się z powodu braku oznakowania mokrej podłogi..."'
-        },
-        {
-          name: 'consequence',
-          status: /(uraz|obrażenie|rana|złamanie|skręcenie|stłuczenie|uszkodzenie|ból|krwawienie|upadek|doznał|doznała|w wyniku czego|co spowodowało|skutkowało)/i.test(description) ? 'ok' : 'incomplete',
-          userMessage: 'Wskaż, jakie urazy odniosła osoba poszkodowana bezpośrednio w wyniku wypadku. Przykład: "W wyniku upadku doznał złamania nadgarstka prawej ręki..."'
-        }
-      ]
-    };
-    
-    setIsAnalyzing(false);
-    return mockApiResponse;
+        body: JSON.stringify({ description })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Mapowanie odpowiedzi z backendu do formatu używanego przez frontend
+      const mappedResponse = {
+        aspects: [
+          {
+            name: 'when',
+            status: data.When.Status,
+            userMessage: data.When.Description
+          },
+          {
+            name: 'where',
+            status: data.Where.Status,
+            userMessage: data.Where.Description
+          },
+          {
+            name: 'what_doing',
+            status: data.Doing.Status,
+            userMessage: data.Doing.Description
+          },
+          {
+            name: 'how_happened',
+            status: data.How.Status,
+            userMessage: data.How.Description
+          },
+          {
+            name: 'why_cause',
+            status: data.Why.Status,
+            userMessage: data.Why.Description
+          },
+          {
+            name: 'consequence',
+            status: data.Injury.Status,
+            userMessage: data.Injury.Description
+          }
+        ]
+      };
+      
+      setIsAnalyzing(false);
+      return mappedResponse;
+      
+    } catch (error) {
+      console.error('Error calling AI assistant:', error);
+      setIsAnalyzing(false);
+      
+      // Fallback do mock response w przypadku błędu
+      return {
+        aspects: [
+          {
+            name: 'when',
+            status: 'danger',
+            userMessage: 'Nie udało się połączyć z serwerem AI. Sprawdź czy backend jest uruchomiony.'
+          },
+          {
+            name: 'where',
+            status: 'danger',
+            userMessage: 'Nie udało się połączyć z serwerem AI.'
+          },
+          {
+            name: 'what_doing',
+            status: 'danger',
+            userMessage: 'Nie udało się połączyć z serwerem AI.'
+          },
+          {
+            name: 'how_happened',
+            status: 'danger',
+            userMessage: 'Nie udało się połączyć z serwerem AI.'
+          },
+          {
+            name: 'why_cause',
+            status: 'danger',
+            userMessage: 'Nie udało się połączyć z serwerem AI.'
+          },
+          {
+            name: 'consequence',
+            status: 'danger',
+            userMessage: 'Nie udało się połączyć z serwerem AI.'
+          }
+        ]
+      };
+    }
   };
 
   const analyzeDescription = async (description) => {
-    // Wywołanie mock API
+    // Wywołanie API
     const apiResponse = await callAIAssistant(description);
     
     // Przetworzenie odpowiedzi z API
     const analysisResult = {
-      hasWhen: apiResponse.aspects.find(a => a.name === 'when')?.status === 'ok',
-      hasWhere: apiResponse.aspects.find(a => a.name === 'where')?.status === 'ok',
-      hasWhatDoing: apiResponse.aspects.find(a => a.name === 'what_doing')?.status === 'ok',
-      hasHowHappened: apiResponse.aspects.find(a => a.name === 'how_happened')?.status === 'ok',
-      hasWhyCause: apiResponse.aspects.find(a => a.name === 'why_cause')?.status === 'ok',
-      hasConsequence: apiResponse.aspects.find(a => a.name === 'consequence')?.status === 'ok'
+      when: apiResponse.aspects.find(a => a.name === 'when')?.status || 'danger',
+      where: apiResponse.aspects.find(a => a.name === 'where')?.status || 'danger',
+      whatDoing: apiResponse.aspects.find(a => a.name === 'what_doing')?.status || 'danger',
+      howHappened: apiResponse.aspects.find(a => a.name === 'how_happened')?.status || 'danger',
+      whyCause: apiResponse.aspects.find(a => a.name === 'why_cause')?.status || 'danger',
+      consequence: apiResponse.aspects.find(a => a.name === 'consequence')?.status || 'danger',
+      whenDesc: apiResponse.aspects.find(a => a.name === 'when')?.userMessage || '',
+      whereDesc: apiResponse.aspects.find(a => a.name === 'where')?.userMessage || '',
+      whatDoingDesc: apiResponse.aspects.find(a => a.name === 'what_doing')?.userMessage || '',
+      howHappenedDesc: apiResponse.aspects.find(a => a.name === 'how_happened')?.userMessage || '',
+      whyCauseDesc: apiResponse.aspects.find(a => a.name === 'why_cause')?.userMessage || '',
+      consequenceDesc: apiResponse.aspects.find(a => a.name === 'consequence')?.userMessage || ''
     };
 
     setAnalysis(analysisResult);
@@ -85,14 +154,14 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
     const recommendations = [];
 
     aspects.forEach(aspect => {
-      if (aspect.status === 'missing') {
+      if (aspect.status === 'danger') {
         recommendations.push({
           priority: 'high',
           aspectName: aspect.name,
           title: getAspectTitle(aspect.name),
           message: aspect.userMessage
         });
-      } else if (aspect.status === 'incomplete') {
+      } else if (aspect.status === 'warning') {
         recommendations.push({
           priority: 'medium',
           aspectName: aspect.name,
@@ -127,23 +196,19 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
     return titles[aspectName] || 'Uwaga';
   };
 
-  // Reset sprawdzenia gdy użytkownik zmienia tekst
+  // Oznacz tekst jako zmodyfikowany gdy użytkownik zmienia treść po sprawdzeniu
   useEffect(() => {
-    if (formData.accidentDescription && formData.accidentDescription.length > 20) {
-      setShowAnalysis(true);
-      // Reset flagi sprawdzenia gdy tekst się zmienił
-      if (isChecked) {
-        setIsChecked(false);
-      }
-    } else {
-      setShowAnalysis(false);
-      setIsChecked(false);
+    // Oznacz że tekst został zmodyfikowany po sprawdzeniu
+    if (isChecked && formData.accidentDescription) {
+      setIsTextModified(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.accidentDescription]);
 
   const handleCheckText = async () => {
-    if (formData.accidentDescription && formData.accidentDescription.length > 20) {
+    if (formData.accidentDescription && formData.accidentDescription.length > 0) {
+      setIsTextModified(false);
+      setShowAnalysis(true);
       await analyzeDescription(formData.accidentDescription);
     }
   };
@@ -194,7 +259,7 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
 
   const getCompletionScore = () => {
     const totalCriteria = 6;
-    const metCriteria = Object.values(analysis).filter(val => val === true).length;
+    const metCriteria = Object.values(analysis).filter(val => val === 'ok').length;
     return Math.round((metCriteria / totalCriteria) * 100);
   };
 
@@ -290,15 +355,7 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
               onChange={(e) => updateFormData('injuryType', e.target.value)}
               placeholder="Opisz rodzaj doznanych urazów, np: złamanie nadgarstka prawej ręki, głębokie skaleczenie lewej dłoni, stłuczenie kolana..."
               rows="3"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '2px solid #ffa726',
-                borderRadius: '6px',
-                fontSize: '1rem',
-                fontFamily: 'inherit',
-                resize: 'vertical'
-              }}
+              className="textarea-warning"
               required
             />
           </div>
@@ -308,14 +365,19 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
               Szczegółowy opis okoliczności, miejsca i przyczyn wypadku
             </label>
             <div style={{ 
-              background: '#e3f2fd', 
+              background: '#e8f5e9', 
               padding: '0.75rem', 
               borderRadius: '4px', 
               marginBottom: '0.5rem',
               fontSize: '0.85rem',
-              color: '#1565c0'
+              color: '#005540'
             }}>
-              <strong>💡 Wskazówka:</strong> Dobry opis powinien zawierać:
+              <strong>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ verticalAlign: 'middle', marginRight: '0.25rem' }}>
+                  <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/>
+                </svg>
+                Wskazówka:
+              </strong> Dobry opis powinien zawierać:
               <ul style={{ margin: '0.5rem 0 0 1.5rem', paddingLeft: 0 }}>
                 <li>Kiedy dokładnie doszło do wypadku (godzina, okoliczności)</li>
                 <li>Gdzie dokładnie miało miejsce zdarzenie</li>
@@ -333,40 +395,39 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
               style={{
                 width: '100%',
                 padding: '0.75rem',
-                border: showAnalysis && getCompletionScore() < 100 ? '2px solid #ff9800' : '2px solid #4caf50',
+                border: showAnalysis && getCompletionScore() < 100 ? '2px solid #bcd144' : '2px solid #039b45',
                 borderRadius: '6px',
                 fontSize: '1rem',
                 fontFamily: 'inherit',
                 resize: 'vertical',
-                boxShadow: showAnalysis ? '0 0 10px rgba(255, 152, 0, 0.2)' : 'none'
+                boxShadow: showAnalysis ? '0 0 10px rgba(188, 209, 68, 0.2)' : 'none'
               }}
               required
             />
           </div>
 
           {/* PRZYCISK SPRAWDŹ TEKST */}
-          {formData.accidentDescription && formData.accidentDescription.length > 20 && (
-            <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <button
-                type="button"
-                onClick={handleCheckText}
-                disabled={isAnalyzing}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: isChecked ? '#4caf50' : '#2196f3',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: isAnalyzing ? 'not-allowed' : 'pointer',
-                  opacity: isAnalyzing ? 0.6 : 1,
-                  transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
+          <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <button
+              type="button"
+              onClick={handleCheckText}
+              disabled={isAnalyzing || !formData.accidentDescription || formData.accidentDescription.length === 0}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: isChecked ? '#039b45' : '#81cb32',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: (isAnalyzing || !formData.accidentDescription || formData.accidentDescription.length === 0) ? 'not-allowed' : 'pointer',
+                opacity: (isAnalyzing || !formData.accidentDescription || formData.accidentDescription.length === 0) ? 0.6 : 1,
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
                 {isAnalyzing ? (
                   <>
                     <span style={{ 
@@ -383,123 +444,117 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
                 ) : isChecked ? (
                   <>✅ Sprawdzono</>
                 ) : (
-                  <>🔍 Sprawdź tekst</>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                    Sprawdź tekst
+                  </span>
                 )}
-              </button>
-
-              {/* STATUS INDICATORS - DIODY */}
-              {isChecked && (
-                <div style={{ 
-                  display: 'flex', 
-                  gap: '0.5rem', 
-                  alignItems: 'center',
-                  flexWrap: 'wrap'
-                }}>
-                  <StatusLED status={analysis.hasWhen} label="Kiedy" />
-                  <StatusLED status={analysis.hasWhere} label="Gdzie" />
-                  <StatusLED status={analysis.hasWhatDoing} label="Co robił" />
-                  <StatusLED status={analysis.hasHowHappened} label="Jak" />
-                  <StatusLED status={analysis.hasWhyCause} label="Dlaczego" />
-                  <StatusLED status={analysis.hasConsequence} label="Skutki" />
-                </div>
-              )}
-            </div>
-          )}
+            </button>
+          </div>
 
           {/* AI ANALYSIS SECTION */}
           {showAnalysis && isChecked && (
             <div style={{ marginTop: '1.5rem' }}>
               <div style={{
-                background: getCompletionScore() === 100 ? '#e8f5e9' : '#fff3e0',
-                border: `2px solid ${getCompletionScore() === 100 ? '#4caf50' : '#ff9800'}`,
+                background: getCompletionScore() === 100 ? '#e8f5e9' : '#fff9e6',
+                border: `2px solid ${getCompletionScore() === 100 ? '#039b45' : '#bcd144'}`,
                 borderRadius: '8px',
                 padding: '1.5rem'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
-                  <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>
-                    {getCompletionScore() === 100 ? '✅' : '🤖'}
+                  <span style={{ marginRight: '0.75rem' }}>
+                    {getCompletionScore() === 100 ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#039b45">
+                        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#ffa726">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                      </svg>
+                    )}
                   </span>
                   <h4 style={{ color: '#333', margin: 0 }}>
                     Analiza AI: Kompletność opisu ({getCompletionScore()}%)
                   </h4>
                 </div>
+                
+                {getCompletionScore() < 100 && (
+                  <div style={{
+                    background: 'linear-gradient(135deg, #e3f2fd 0%, #e8f5e9 100%)',
+                    border: '2px solid #039b45',
+                    borderRadius: '8px',
+                    padding: '1rem 1.25rem',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#039b45" style={{ flexShrink: 0 }}>
+                      <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/>
+                    </svg>
+                    <span style={{ color: '#005540', fontSize: '0.95rem', fontWeight: '500' }}>
+                      Uzupełnienie braków w opisie przyspieszy proces weryfikacji wniosku przez ZUS.
+                    </span>
+                  </div>
+                )}
+                
+                {isTextModified && (
+                  <div style={{
+                    background: '#fff3cd',
+                    border: '2px solid #ffc107',
+                    borderRadius: '6px',
+                    padding: '0.75rem',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                    <span style={{ fontSize: '0.9rem', color: '#856404' }}>
+                      <strong>Tekst został zmodyfikowany.</strong> Kliknij "Sprawdź tekst" ponownie, aby zaktualizować analizę AI.
+                    </span>
+                  </div>
+                )}
 
                 {/* Visual Indicators */}
                 <div style={{ 
                   display: 'grid', 
                   gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                  gap: '0.75rem',
-                  marginBottom: '1.5rem'
+                  gap: '0.75rem'
                 }}>
                   <IndicatorItem 
-                    label="Kiedy?" 
-                    met={analysis.hasWhen} 
-                    icon="🕐"
+                    title="Kiedy?" 
+                    status={analysis.when} 
+                    description={analysis.whenDesc || 'Określ dokładny czas wypadku'}
                   />
                   <IndicatorItem 
-                    label="Gdzie?" 
-                    met={analysis.hasWhere} 
-                    icon="📍"
+                    title="Gdzie?" 
+                    status={analysis.where} 
+                    description={analysis.whereDesc || 'Określ dokładne miejsce wypadku'}
                   />
                   <IndicatorItem 
-                    label="Co robił?" 
-                    met={analysis.hasWhatDoing} 
-                    icon="👷"
+                    title="Co robił?" 
+                    status={analysis.whatDoing} 
+                    description={analysis.whatDoingDesc || 'Opisz czynności przed wypadkiem'}
                   />
                   <IndicatorItem 
-                    label="Jak doszło?" 
-                    met={analysis.hasHowHappened} 
-                    icon="📋"
+                    title="Jak doszło?" 
+                    status={analysis.howHappened} 
+                    description={analysis.howHappenedDesc || 'Opisz sekwencję zdarzeń'}
                   />
                   <IndicatorItem 
-                    label="Dlaczego?" 
-                    met={analysis.hasWhyCause} 
-                    icon="❓"
+                    title="Dlaczego?" 
+                    status={analysis.whyCause} 
+                    description={analysis.whyCauseDesc || 'Określ przyczynę wypadku'}
                   />
                   <IndicatorItem 
-                    label="Skutki" 
-                    met={analysis.hasConsequence} 
-                    icon="🩹"
+                    title="Skutki" 
+                    status={analysis.consequence} 
+                    description={analysis.consequenceDesc || 'Opisz obrażenia'}
                   />
                 </div>
-
-                {/* Recommendations */}
-                {aiRecommendations.length > 0 && (
-                  <div>
-                    <h5 style={{ color: '#555', marginBottom: '0.75rem', fontSize: '0.95rem' }}>
-                      📝 Rekomendacje AI dla Twojego przypadku:
-                    </h5>
-                    {aiRecommendations.map((rec, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          background: rec.priority === 'success' ? '#c8e6c9' : 
-                                     rec.priority === 'high' ? '#ffcdd2' : '#fff9c4',
-                          border: `1px solid ${rec.priority === 'success' ? '#4caf50' : 
-                                               rec.priority === 'high' ? '#f44336' : '#fbc02d'}`,
-                          borderRadius: '6px',
-                          padding: '0.75rem',
-                          marginBottom: '0.5rem'
-                        }}
-                      >
-                        <strong style={{ 
-                          display: 'block', 
-                          marginBottom: '0.25rem',
-                          color: rec.priority === 'success' ? '#2e7d32' : 
-                                 rec.priority === 'high' ? '#c62828' : '#f57f17'
-                        }}>
-                          {rec.priority === 'high' && '⚠️ '}
-                          {rec.priority === 'medium' && 'ℹ️ '}
-                          {rec.priority === 'success' && '✅ '}
-                          {rec.title}
-                        </strong>
-                        <span style={{ fontSize: '0.9rem', color: '#555' }}>
-                          {rec.message}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -529,7 +584,7 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
                 checked={formData.wasFirstAidGiven === 'Tak'}
                 onChange={(e) => updateFormData('wasFirstAidGiven', e.target.value)}
               />
-              <label htmlFor="first-aid-yes">Tak</label>
+              <label htmlFor="first-aid-yes">✓ Tak</label>
             </div>
             <div className="radio-option">
               <input
@@ -540,7 +595,7 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
                 checked={formData.wasFirstAidGiven === 'Nie'}
                 onChange={(e) => updateFormData('wasFirstAidGiven', e.target.value)}
               />
-              <label htmlFor="first-aid-no">Nie</label>
+              <label htmlFor="first-aid-no">✗ Nie</label>
             </div>
           </div>
         </div>
@@ -553,15 +608,6 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
               onChange={(e) => updateFormData('healthFacilityInfo', e.target.value)}
               placeholder="Wprowadź nazwę i adres placówki służby zdrowia"
               rows="2"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '2px solid #e0e0e0',
-                borderRadius: '6px',
-                fontSize: '1rem',
-                fontFamily: 'inherit',
-                resize: 'vertical'
-              }}
               required
             />
           </div>
@@ -574,15 +620,6 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
             onChange={(e) => updateFormData('investigatingAuthority', e.target.value)}
             placeholder="Podaj nazwę i adres organu, który prowadził postępowanie (np. policja, prokuratura)"
             rows="2"
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              border: '2px solid #e0e0e0',
-              borderRadius: '6px',
-              fontSize: '1rem',
-              fontFamily: 'inherit',
-              resize: 'vertical'
-            }}
             required
           />
         </div>
@@ -599,7 +636,7 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
                 checked={formData.wasMachineryInvolved === 'Tak'}
                 onChange={(e) => updateFormData('wasMachineryInvolved', e.target.value)}
               />
-              <label htmlFor="machinery-yes">Tak</label>
+              <label htmlFor="machinery-yes">✓ Tak</label>
             </div>
             <div className="radio-option">
               <input
@@ -610,7 +647,7 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
                 checked={formData.wasMachineryInvolved === 'Nie'}
                 onChange={(e) => updateFormData('wasMachineryInvolved', e.target.value)}
               />
-              <label htmlFor="machinery-no">Nie</label>
+              <label htmlFor="machinery-no">✗ Nie</label>
             </div>
           </div>
         </div>
@@ -626,15 +663,6 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
                 onChange={(e) => updateFormData('machineryCondition', e.target.value)}
                 placeholder="Opisz czy maszyna/urządzenie były sprawne i w jaki sposób były użytkowane"
                 rows="3"
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '2px solid #e0e0e0',
-                  borderRadius: '6px',
-                  fontSize: '1rem',
-                  fontFamily: 'inherit',
-                  resize: 'vertical'
-                }}
                 required
               />
             </div>
@@ -651,7 +679,7 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
                     checked={formData.hasCertification === 'Tak'}
                     onChange={(e) => updateFormData('hasCertification', e.target.value)}
                   />
-                  <label htmlFor="cert-yes">Tak</label>
+                  <label htmlFor="cert-yes">✓ Tak</label>
                 </div>
                 <div className="radio-option">
                   <input
@@ -662,7 +690,7 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
                     checked={formData.hasCertification === 'Nie'}
                     onChange={(e) => updateFormData('hasCertification', e.target.value)}
                   />
-                  <label htmlFor="cert-no">Nie</label>
+                  <label htmlFor="cert-no">✗ Nie</label>
                 </div>
               </div>
             </div>
@@ -681,7 +709,7 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
                     checked={formData.isInInventory === 'Tak'}
                     onChange={(e) => updateFormData('isInInventory', e.target.value)}
                   />
-                  <label htmlFor="inventory-yes">Tak</label>
+                  <label htmlFor="inventory-yes">✓ Tak</label>
                 </div>
                 <div className="radio-option">
                   <input
@@ -692,7 +720,7 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
                     checked={formData.isInInventory === 'Nie'}
                     onChange={(e) => updateFormData('isInInventory', e.target.value)}
                   />
-                  <label htmlFor="inventory-no">Nie</label>
+                  <label htmlFor="inventory-no">✗ Nie</label>
                 </div>
               </div>
             </div>
@@ -722,37 +750,104 @@ function Section8({ formData, updateFormData, onNext, onPrev }) {
 }
 
 // Helper component for visual indicators
-function IndicatorItem({ label, met, icon }) {
+function IndicatorItem({ title, status, description }) {
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'ok': return '#039b45';
+      case 'warning': return '#bcd144';
+      case 'danger': return '#ff6b6b';
+      default: return '#9e9e9e';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch(status) {
+      case 'ok': return '✓';
+      case 'warning': return '!';
+      case 'danger': return '✗';
+      default: return '?';
+    }
+  };
+
   return (
     <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0.5rem',
-      background: met ? '#c8e6c9' : '#ffcdd2',
-      border: `2px solid ${met ? '#4caf50' : '#f44336'}`,
-      borderRadius: '6px',
-      fontSize: '0.85rem'
+      padding: '1rem',
+      border: `2px solid ${getStatusColor(status)}`,
+      borderRadius: '8px',
+      backgroundColor: `${getStatusColor(status)}10`,
     }}>
-      <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>{icon}</span>
-      <span style={{ fontWeight: '500', color: '#333' }}>{label}</span>
-      <span style={{ marginLeft: 'auto', fontSize: '1.2rem' }}>
-        {met ? '✅' : '❌'}
-      </span>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        marginBottom: '0.5rem',
+        fontWeight: 'bold',
+      }}>
+        <span style={{
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          backgroundColor: getStatusColor(status),
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: '0.5rem',
+          fontSize: '14px',
+        }}>
+          {getStatusIcon(status)}
+        </span>
+        {title}
+      </div>
+      <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
+        {description}
+      </p>
     </div>
   );
 }
 
 // Komponent diody LED statusu
 function StatusLED({ status, label }) {
+  const getColors = () => {
+    switch(status) {
+      case 'ok':
+        return {
+          bg: '#e8f5e9',
+          border: '#039b45',
+          led: '#039b45',
+          text: '#005540',
+          animation: 'none'
+        };
+      case 'warning':
+        return {
+          bg: '#fff9e6',
+          border: '#bcd144',
+          led: '#bcd144',
+          text: '#6b8e00',
+          animation: 'none'
+        };
+      case 'danger':
+      default:
+        return {
+          bg: '#ffebee',
+          border: '#ff6b6b',
+          led: '#ff6b6b',
+          text: '#c62828',
+          animation: 'pulse 2s ease-in-out infinite'
+        };
+    }
+  };
+
+  const colors = getColors();
+
   return (
     <div style={{
       display: 'flex',
       alignItems: 'center',
       gap: '0.3rem',
       padding: '0.3rem 0.6rem',
-      background: status ? '#e8f5e9' : '#ffebee',
+      background: colors.bg,
       borderRadius: '12px',
-      border: `1px solid ${status ? '#4caf50' : '#f44336'}`,
+      border: `1px solid ${colors.border}`,
       fontSize: '0.75rem',
       fontWeight: '600'
     }}>
@@ -760,11 +855,11 @@ function StatusLED({ status, label }) {
         width: '8px',
         height: '8px',
         borderRadius: '50%',
-        background: status ? '#4caf50' : '#f44336',
-        boxShadow: status ? '0 0 6px #4caf50' : '0 0 6px #f44336',
-        animation: status ? 'none' : 'pulse 2s ease-in-out infinite'
+        background: colors.led,
+        boxShadow: `0 0 6px ${colors.led}`,
+        animation: colors.animation
       }}></div>
-      <span style={{ color: status ? '#2e7d32' : '#c62828' }}>
+      <span style={{ color: colors.text }}>
         {label}
       </span>
     </div>

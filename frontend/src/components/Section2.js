@@ -97,7 +97,7 @@ function Section2({ formData, updateFormData, onNext, onPrev }) {
                 checked={formData.isLastPolandCorrespondenceAddress === 'Tak'}
                 onChange={(e) => updateFormData('isLastPolandCorrespondenceAddress', e.target.value)}
               />
-              <label htmlFor="poland-corr-yes">Tak</label>
+              <label htmlFor="poland-corr-yes">✓ Tak</label>
             </div>
             <div className="radio-option">
               <input
@@ -108,7 +108,7 @@ function Section2({ formData, updateFormData, onNext, onPrev }) {
                 checked={formData.isLastPolandCorrespondenceAddress === 'Nie'}
                 onChange={(e) => updateFormData('isLastPolandCorrespondenceAddress', e.target.value)}
               />
-              <label htmlFor="poland-corr-no">Nie</label>
+              <label htmlFor="poland-corr-no">✗ Nie</label>
             </div>
           </div>
         </div>

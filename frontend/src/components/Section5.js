@@ -35,7 +35,7 @@ function Section5({ formData, updateFormData, onNext, onPrev }) {
                 checked={formData.isNanny === 'Tak'}
                 onChange={(e) => updateFormData('isNanny', e.target.value)}
               />
-              <label htmlFor="nanny-yes">Tak</label>
+              <label htmlFor="nanny-yes">✓ Tak</label>
             </div>
             <div className="radio-option">
               <input
@@ -46,7 +46,7 @@ function Section5({ formData, updateFormData, onNext, onPrev }) {
                 checked={formData.isNanny === 'Nie'}
                 onChange={(e) => updateFormData('isNanny', e.target.value)}
               />
-              <label htmlFor="nanny-no">Nie</label>
+              <label htmlFor="nanny-no">✗ Nie</label>
             </div>
           </div>
         </div>
