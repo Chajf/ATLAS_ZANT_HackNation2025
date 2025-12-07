@@ -616,6 +616,13 @@ def generate_injured_statement_docx(data: InjuredStatementRequest) -> bytes:
     
     # Replace placeholders in tables
     replace_placeholders_in_tables(doc, mapping)
+    
+    # Save to bytes
+    docx_bytes = io.BytesIO()
+    doc.save(docx_bytes)
+    docx_bytes.seek(0)
+    
+    return docx_bytes.getvalue()
 
 
 def compare_pdf_docx_data(pdf_data: PDFExtractionResponse, docx_data: DOCXExplanationResponse) -> DataComparisonResponse:
