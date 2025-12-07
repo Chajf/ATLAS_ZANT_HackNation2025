@@ -95,7 +95,7 @@ function FileUpload({ onFilesUploaded }) {
 
         <div className="file-input-group">
           <label htmlFor="victimExplanation">
-            Wyjaśnienie poszkodowanego (DOCX) - opcjonalnie
+            Wyjaśnienie poszkodowanego (DOCX)
           </label>
           <input
             type="file"
