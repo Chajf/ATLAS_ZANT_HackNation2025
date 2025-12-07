@@ -24,7 +24,14 @@ function App() {
     setCurrentStep(2);
   };
 
-  const generateAnalysisFromExtractedData = (data) => {
+  const generateAnalysisFromExtractedData = (responseData) => {
+    // Check if we received comparison data (with both PDF and DOCX)
+    const isComparisonData = responseData.mergedData !== undefined;
+    
+    // Use merged data if available, otherwise use direct PDF data
+    const data = isComparisonData ? responseData.mergedData : responseData;
+    const validationIssues = responseData.issues || [];
+    
     // Analyze the extracted data to determine status
     const hasAccidentDetails = data.accidentDescription && data.accidentDescription.length > 50;
     const hasDateTime = data.accidentDate && data.accidentTime;
@@ -40,6 +47,45 @@ function App() {
     if (!data.attachProsecutorDecision && data.investigatingAuthority) missingDocs.push('Decyzja prokuratora');
     if (!hasWitnesses) missingDocs.push('Oświadczenia świadków');
     
+    // Process validation issues from comparison
+    const errorIssues = validationIssues.filter(issue => issue.severity === 'error');
+    const warningIssues = validationIssues.filter(issue => issue.severity === 'warning');
+    const hasErrors = errorIssues.length > 0;
+    const hasWarnings = warningIssues.length > 0;
+    
+    // Build consistency data from validation issues
+    const consistencyData = {
+      dates: { 
+        consistent: !validationIssues.some(i => i.field.includes('Date') || i.field.includes('date')),
+        details: validationIssues.find(i => i.field.includes('Date') || i.field.includes('date'))?.message || 
+                 (isComparisonData ? 'Daty się zgadzają we wszystkich dokumentach' : hasDateTime ? 'Data wypadku podana w dokumencie' : 'Brak pełnych danych o dacie')
+      },
+      circumstances: { 
+        consistent: !validationIssues.some(i => i.field.includes('Description') || i.field.includes('description')),
+        details: validationIssues.find(i => i.field.includes('Description'))?.message || 
+                 (isComparisonData ? 'Opis okoliczności spójny między dokumentami' : hasAccidentDetails ? 'Opis okoliczności zawarty' : 'Rozbieżności w opisie okoliczności')
+      },
+      location: { 
+        consistent: !validationIssues.some(i => i.field.includes('Location') || i.field.includes('location')),
+        details: validationIssues.find(i => i.field.includes('Location'))?.message ||
+                 (isComparisonData ? 'Miejsce wypadku zgodne' : hasLocation ? 'Miejsce wypadku określone' : 'Brak szczegółów o miejscu')
+      },
+      victim: { 
+        consistent: !validationIssues.some(i => ['pesel', 'firstName', 'lastName'].includes(i.field)),
+        details: validationIssues.find(i => ['pesel', 'firstName', 'lastName'].includes(i.field))?.message ||
+                 (isComparisonData ? 'Dane poszkodowanego zgodne w obu dokumentach' : 'Dane poszkodowanego kompletne')
+      },
+      witnesses: { 
+        consistent: hasWitnesses,
+        details: hasWitnesses ? 'Świadkowie wskazani' : (isComparisonData ? 'Brak świadków w dokumentach' : 'Brak świadków')
+      },
+      causes: { 
+        consistent: !validationIssues.some(i => i.field.includes('injury') || i.field.includes('Injury')),
+        details: validationIssues.find(i => i.field.includes('injury'))?.message ||
+                 (hasInjury ? 'Przyczyny i skutki opisane' : 'Brak opisu skutków')
+      }
+    };
+    
     return {
       causal: {
         causalRelation: { 
@@ -47,7 +93,7 @@ function App() {
           description: hasAccidentDetails ? 'Wyraźny związek przyczynowy - opisane przyczyny wypadku' : 'Brak szczegółowego opisu przyczyn' 
         },
         timeRelation: { 
-          status: hasDateTime ? 'green' : 'red', 
+          status: hasDateTime && !validationIssues.some(i => i.field.includes('Date')) ? 'green' : 'yellow', 
           description: hasDateTime ? `Zdarzenie miało miejsce ${data.accidentDate} o godz. ${data.accidentTime}` : 'Brak informacji o czasie wypadku' 
         },
         placeRelation: { 
@@ -59,20 +105,15 @@ function App() {
           description: hasAccidentDetails ? 'Wypadek w godzinach pracy, podczas wykonywania obowiązków' : 'Wymaga potwierdzenia związku z obowiązkami służbowymi' 
         }
       },
-      consistency: {
-        dates: { consistent: hasDateTime, details: hasDateTime ? 'Daty się zgadzają we wszystkich dokumentach' : 'Brak pełnych danych o dacie' },
-        circumstances: { consistent: hasAccidentDetails, details: hasAccidentDetails ? 'Opis okoliczności spójny' : 'Rozbieżności w opisie okoliczności' },
-        location: { consistent: hasLocation, details: hasLocation ? 'Miejsce spójne' : 'Brak szczegółów o miejscu' },
-        victim: { consistent: data.pesel && data.firstName && data.lastName, details: 'Dane poszkodowanego kompletne' },
-        witnesses: { consistent: hasWitnesses, details: hasWitnesses ? 'Świadkowie wskazani' : 'Brak świadków' },
-        causes: { consistent: hasInjury, details: hasInjury ? 'Przyczyny i skutki opisane' : 'Brak opisu skutków' }
-      },
+      consistency: consistencyData,
       eligibility: {
-        decision: missingDocs.length > 0 ? 'investigation_needed' : 'approved',
+        decision: hasErrors || missingDocs.length > 0 ? 'investigation_needed' : hasWarnings ? 'conditional_approval' : 'approved',
         missingDocuments: missingDocs,
-        requiresZUSOpinion: data.injuryType && data.injuryType.toLowerCase().includes('ciężki')
+        requiresZUSOpinion: data.injuryType && data.injuryType.toLowerCase().includes('ciężki'),
+        validationIssues: validationIssues
       },
-      extractedData: data
+      extractedData: data,
+      comparisonData: isComparisonData ? responseData : null
     };
   };
 
@@ -120,7 +161,7 @@ function App() {
 
         {currentStep === 3 && analysisData && (
           <div>
-            <DataConsistency data={analysisData.consistency} />
+            <DataConsistency data={analysisData.consistency} comparisonData={analysisData.comparisonData} />
             <button className="next-btn" onClick={() => setCurrentStep(4)}>Dalej</button>
           </div>
         )}

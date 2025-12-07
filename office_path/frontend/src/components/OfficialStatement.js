@@ -21,6 +21,7 @@ function OfficialStatement({ analysisData, extractedData }) {
         ...prev,
         victimName: `${extractedData.firstName || ''} ${extractedData.lastName || ''}`.trim(),
         victimPesel: extractedData.pesel || '',
+        employerName: extractedData.employerName || '',
         accidentDate: extractedData.accidentDate || '',
         decision: analysisData?.eligibility?.decision || 'investigation_needed'
       }));
@@ -39,6 +40,19 @@ function OfficialStatement({ analysisData, extractedData }) {
     e.preventDefault();
     console.log('Statement submitted:', formData);
     alert('Stanowisko zostało zapisane');
+  };
+
+  const downloadJSON = () => {
+    const jsonData = JSON.stringify(formData, null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `stanowisko_${formData.caseNumber || 'draft'}_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const generateJustification = () => {
@@ -78,6 +92,30 @@ function OfficialStatement({ analysisData, extractedData }) {
       <p className="section-description">
         Sformułowanie oficjalnego wniosku stanowiska i jego uzasadnienia
       </p>
+
+      {/* VALIDATION ISSUES ALERT */}
+      {analysisData?.eligibility?.validationIssues && analysisData.eligibility.validationIssues.length > 0 && (
+        <div className="validation-alert" style={{ 
+          backgroundColor: '#fff3cd', 
+          border: '2px solid #ffc107', 
+          padding: '1rem', 
+          borderRadius: '8px', 
+          marginBottom: '2rem' 
+        }}>
+          <h3 style={{ color: '#856404', marginBottom: '1rem' }}>
+            ⚠️ Wykryto rozbieżności w dokumentach
+          </h3>
+          <ul style={{ marginLeft: '1.5rem' }}>
+            {analysisData.eligibility.validationIssues
+              .filter(issue => issue.severity === 'error' || issue.severity === 'warning')
+              .map((issue, idx) => (
+                <li key={idx} style={{ marginBottom: '0.5rem', color: issue.severity === 'error' ? '#d32f2f' : '#f57c00' }}>
+                  <strong>{issue.field}:</strong> {issue.message}
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="statement-form">
         <div className="form-section">
@@ -150,6 +188,29 @@ function OfficialStatement({ analysisData, extractedData }) {
             />
           </div>
         </div>
+
+        {/* DETAILED EXPLANATION FROM INJURED PERSON (DOCX) */}
+        {extractedData?.detailedExplanation && (
+          <div className="form-section" style={{ backgroundColor: '#f0f8ff', padding: '1.5rem', borderRadius: '8px', border: '2px solid #2196f3' }}>
+            <h3>📝 Wyjaśnienie poszkodowanego</h3>
+            <div className="info-box">
+              <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: '#333', marginBottom: '1rem' }}>
+                {extractedData.detailedExplanation}
+              </p>
+              {extractedData.medicalDocuments && (
+                <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'white', borderRadius: '4px' }}>
+                  <strong>Dokumenty medyczne:</strong>
+                  <p style={{ marginTop: '0.5rem' }}>{extractedData.medicalDocuments}</p>
+                </div>
+              )}
+            </div>
+            {extractedData.explanationDate && (
+              <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
+                <strong>Data wyjaśnienia:</strong> {extractedData.explanationDate}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="form-section">
           <h3>Stanowisko</h3>
@@ -239,6 +300,9 @@ function OfficialStatement({ analysisData, extractedData }) {
           </button>
           <button type="button" className="preview-btn">
             Podgląd dokumentu
+          </button>
+          <button type="button" className="download-json-btn" onClick={downloadJSON}>
+            Pobierz JSON
           </button>
         </div>
       </form>

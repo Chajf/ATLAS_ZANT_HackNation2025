@@ -33,6 +33,7 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
     medicalHelp: '',
     hospitalName: '',
     sickLeaveDays: '',
+    medicalDocuments: '',
     
     // V. Okoliczności wypadku
     workTask: '',
@@ -61,20 +62,29 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
         extractedData.witness2?.firstName && extractedData.witness2?.lastName ? `${extractedData.witness2.firstName} ${extractedData.witness2.lastName}` : '',
         extractedData.witness3?.firstName && extractedData.witness3?.lastName ? `${extractedData.witness3.firstName} ${extractedData.witness3.lastName}` : ''
       ].filter(w => w).join(', ');
+      
+      // Build employer address from DOCX data
+      const employerAddress = extractedData.employerLocation || '';
 
       setCardData(prev => ({
         ...prev,
+        // I. Dane dotyczące pracodawcy (from DOCX)
+        employerName: extractedData.employerName || '',
+        employerAddress: employerAddress,
+        employerNip: extractedData.nip || '',
+        
         // II. Dane dotyczące poszkodowanego
         victimLastName: extractedData.lastName || '',
         victimFirstName: extractedData.firstName || '',
         victimPesel: extractedData.pesel || '',
         victimAddress: fullAddress,
+        victimPosition: extractedData.position || '',
         
         // III. Dane dotyczące wypadku
         accidentDate: extractedData.accidentDate || '',
         accidentTime: extractedData.accidentTime || '',
         accidentPlace: extractedData.accidentLocation || '',
-        accidentDescription: extractedData.accidentDescription || '',
+        accidentDescription: extractedData.accidentDescription || extractedData.detailedExplanation || '',
         witnesses: witnessesText,
         
         // IV. Skutki wypadku
@@ -82,6 +92,7 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
         injuryDescription: extractedData.injuryType || '',
         medicalHelp: extractedData.wasFirstAidGiven === 'Tak' ? 'Pierwsza pomoc udzielona' : 'Brak informacji',
         hospitalName: extractedData.healthFacilityInfo || '',
+        medicalDocuments: extractedData.medicalDocuments || '',
         
         // V. Okoliczności wypadku
         workTask: extractedData.accidentDescription ? 'Wykonywanie zwykłych obowiązków służbowych' : '',
@@ -108,6 +119,19 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
 
   const exportToPDF = () => {
     alert('Eksport do PDF - funkcjonalność w przygotowaniu');
+  };
+
+  const downloadJSON = () => {
+    const jsonData = JSON.stringify(cardData, null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `karta_wypadku_${cardData.victimLastName || 'draft'}_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -447,6 +471,20 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
               min="0"
             />
           </div>
+
+          <div className="form-group">
+            <label htmlFor="medicalDocuments">Dokumenty medyczne (z wyjaśnienia poszkodowanego)</label>
+            <textarea
+              id="medicalDocuments"
+              name="medicalDocuments"
+              value={cardData.medicalDocuments}
+              onChange={handleChange}
+              rows="2"
+              placeholder="Lista dokumentów medycznych potwierdzających uszkodzenia ciała"
+              readOnly
+              style={{ backgroundColor: '#f0f8ff' }}
+            />
+          </div>
         </div>
 
         {/* V. OKOLICZNOŚCI WYPADKU */}
@@ -499,6 +537,23 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
             />
           </div>
         </div>
+
+        {/* DETAILED EXPLANATION FROM INJURED PERSON (DOCX) */}
+        {extractedData?.detailedExplanation && (
+          <div className="form-section-card" style={{ backgroundColor: '#f0f8ff', border: '2px solid #2196f3' }}>
+            <h3>📝 Wyjaśnienie poszkodowanego (z dokumentu DOCX)</h3>
+            <div className="info-box">
+              <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: '#333' }}>
+                {extractedData.detailedExplanation}
+              </p>
+            </div>
+            {extractedData.explanationDate && (
+              <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
+                <strong>Data wyjaśnienia:</strong> {extractedData.explanationDate}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* VI. USTALENIA ZESPOŁU POWYPADKOWEGO */}
         <div className="form-section-card">
@@ -584,6 +639,9 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
           </button>
           <button type="button" className="print-btn" onClick={() => window.print()}>
             Drukuj
+          </button>
+          <button type="button" className="download-json-btn" onClick={downloadJSON}>
+            Pobierz JSON
           </button>
         </div>
       </form>

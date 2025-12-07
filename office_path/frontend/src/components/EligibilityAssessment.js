@@ -6,14 +6,14 @@ function EligibilityAssessment({ data }) {
       case 'approved':
         return {
           title: 'Zdarzenie uznane za wypadek przy pracy',
-          color: '#4CAF50',
+          color: '#039b45',
           icon: '✓',
           description: 'Zdarzenie spełnia wszystkie kryteria wypadku przy pracy zgodnie z obowiązującymi przepisami.'
         };
       case 'rejected':
         return {
           title: 'Zdarzenie nieuznaane za wypadek przy pracy',
-          color: '#F44336',
+          color: '#e74c3c',
           icon: '✗',
           description: 'Zdarzenie nie spełnia kryteriów wypadku przy pracy.'
         };
@@ -24,10 +24,17 @@ function EligibilityAssessment({ data }) {
           icon: '⚠',
           description: 'Konieczne uzyskanie dodatkowych dokumentów w celu podjęcia ostatecznej decyzji.'
         };
+      case 'conditional_approval':
+        return {
+          title: 'Warunkowa akceptacja',
+          color: '#81cb32',
+          icon: '✓',
+          description: 'Zdarzenie może zostać uznane za wypadek przy pracy po dopełnieniu formalności.'
+        };
       default:
         return {
           title: 'Oczekuje na ocenę',
-          color: '#9E9E9E',
+          color: '#757575',
           icon: '?',
           description: 'Trwa analiza dokumentów.'
         };
@@ -81,6 +88,35 @@ function EligibilityAssessment({ data }) {
               opinii Głównego Lekarza Orzecznika ZUS.
             </p>
           </div>
+        </div>
+      )}
+
+      {data.validationIssues && data.validationIssues.length > 0 && (
+        <div className="validation-issues">
+          <h3>Wykryte problemy z danymi:</h3>
+          {data.validationIssues.map((issue, idx) => (
+            <div 
+              key={idx}
+              className={`validation-issue ${issue.severity}`}
+            >
+              <span className="severity-icon">
+                {issue.severity === 'error' ? '🔴' : issue.severity === 'warning' ? '🟡' : 'ℹ️'}
+              </span>
+              <div className="issue-content">
+                <strong>{issue.field}:</strong> {issue.message}
+                {issue.pdf_value && (
+                  <div className="value-comparison">
+                    <span className="value-label">PDF:</span> <code>{issue.pdf_value}</code>
+                    {issue.docx_value && (
+                      <>
+                        <span className="value-label">DOCX:</span> <code>{issue.docx_value}</code>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

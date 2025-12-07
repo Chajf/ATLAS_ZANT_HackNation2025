@@ -3,10 +3,10 @@ import React from 'react';
 function CausalDiagram({ data }) {
   const getStatusColor = (status) => {
     switch (status) {
-      case 'green': return '#4CAF50';
+      case 'green': return '#039b45';
       case 'yellow': return '#FFC107';
-      case 'red': return '#F44336';
-      default: return '#9E9E9E';
+      case 'red': return '#e74c3c';
+      default: return '#757575';
     }
   };
 
@@ -69,7 +69,7 @@ function CausalDiagram({ data }) {
 
         <div className="legend">
           <div className="legend-item">
-            <span className="legend-color" style={{ backgroundColor: '#4CAF50' }}></span>
+            <span className="legend-color" style={{ backgroundColor: '#039b45' }}></span>
             <span>Zielony - Prawidłowo wypełnione i zgadza się</span>
           </div>
           <div className="legend-item">
@@ -77,7 +77,7 @@ function CausalDiagram({ data }) {
             <span>Żółty - Połowicznie się zgadza, wymaga wyjaśnienia</span>
           </div>
           <div className="legend-item">
-            <span className="legend-color" style={{ backgroundColor: '#F44336' }}></span>
+            <span className="legend-color" style={{ backgroundColor: '#e74c3c' }}></span>
             <span>Czerwony - Niewypełnione lub się nie zgadza</span>
           </div>
         </div>

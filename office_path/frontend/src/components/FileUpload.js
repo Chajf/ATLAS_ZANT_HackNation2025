@@ -32,36 +32,41 @@ function FileUpload({ onFilesUploaded }) {
     setError(null);
 
     try {
-      // Create FormData to send the PDF file
+      // Create FormData to send PDF and optionally DOCX files
       const formData = new FormData();
-      formData.append('file', files.accidentReport);
+      formData.append('file', files.accidentReport);  // PDF file (zawiadomienie o wypadku)
+      
+      // Only append DOCX if it exists
+      if (files.victimExplanation) {
+        formData.append('file2', files.victimExplanation);  // DOCX file (wyjaśnienie poszkodowanego)
+      }
 
-      // Send to backend endpoint
+      // Send file(s) to backend endpoint
       const response = await fetch(API_ENDPOINTS.UPLOAD_PDF, {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload and analyze document');
+        throw new Error('Failed to upload and analyze documents');
       }
 
       const extractedData = await response.json();
       
-      // Pass both files and extracted data to parent
+      // Pass files and extracted data to parent
       onFilesUploaded({
         files,
         extractedData
       });
     } catch (err) {
       setError(err.message);
-      console.error('Error uploading file:', err);
+      console.error('Error uploading files:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const isValid = files.accidentReport && files.victimExplanation;
+  const isValid = files.accidentReport;  // Only PDF is required
 
   return (
     <div className="file-upload-section">
@@ -90,19 +95,21 @@ function FileUpload({ onFilesUploaded }) {
 
         <div className="file-input-group">
           <label htmlFor="victimExplanation">
-            <span className="required">*</span> Wyjaśnienie poszkodowanego
+            Wyjaśnienie poszkodowanego (DOCX) - opcjonalnie
           </label>
           <input
             type="file"
             id="victimExplanation"
-            accept=".pdf,.doc,.docx"
+            accept=".docx"
             onChange={(e) => handleFileChange('victimExplanation', e)}
-            required
             disabled={loading}
           />
           {files.victimExplanation && (
             <span className="file-name">✓ {files.victimExplanation.name}</span>
           )}
+          <small style={{ display: 'block', marginTop: '0.5rem', color: '#666' }}>
+            Jeśli dostępne, załącz wyjaśnienie poszkodowanego dla automatycznego porównania danych
+          </small>
         </div>
 
         <div className="file-input-group">

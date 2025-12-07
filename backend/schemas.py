@@ -14,6 +14,55 @@ class WitnessInfo(BaseModel):
     country: str = ""
 
 
+class ValidationIssue(BaseModel):
+    """Single validation issue found during comparison"""
+    field: str  # Nazwa pola
+    severity: Literal["error", "warning", "info"]  # Poziom ważności
+    message: str  # Opis problemu
+    pdfValue: str = ""  # Wartość z PDF
+    docxValue: str = ""  # Wartość z DOCX
+
+
+class DataComparisonResponse(BaseModel):
+    """Response model for comparing PDF and DOCX data"""
+    isValid: bool  # Czy dane są spójne
+    issues: List[ValidationIssue]  # Lista znalezionych problemów
+    mergedData: dict  # Połączone dane z priorytetem
+    summary: str  # Podsumowanie walidacji
+
+
+class DOCXExplanationResponse(BaseModel):
+    """Response model for injured person's explanation (DOCX extraction)"""
+    explanationDate: str = ""  # Data wyjaśnienia (dd.mm.rrrr, HH:MM:SS)
+    accidentDate: str = ""  # Data wypadku (YYYY-MM-DD)
+    accidentTime: str = ""  # Godzina wypadku (HH:MM)
+    accidentLocation: str = ""  # Miejsce wypadku
+    
+    # Dane poszkodowanego
+    firstName: str = ""  # Imię
+    lastName: str = ""  # Nazwisko
+    fatherName: str = ""  # Imię ojca
+    birthDate: str = ""  # Data urodzenia (YYYY-MM-DD)
+    birthPlace: str = ""  # Miejsce urodzenia
+    pesel: str = ""  # Numer PESEL
+    nip: str = ""  # NIP
+    residence: str = ""  # Miejsce zamieszkania
+    
+    # Dane pracodawcy/miejsca zatrudnienia
+    employerName: str = ""  # Miejsce zatrudnienia
+    employerLocation: str = ""  # Lokalizacja pracodawcy
+    position: str = ""  # Stanowisko lub rodzaj pracy
+    
+    # Dokument tożsamości
+    documentType: str = ""  # Rodzaj dokumentu (np. "Dowód osobisty")
+    documentNumber: str = ""  # Numer dokumentu
+    documentIssuedBy: str = ""  # Kto wydał dokument
+    
+    # Wyjaśnienia
+    explanationText: str = ""  # Treść wyjaśnień
+    medicalDocuments: str = ""  # Dokumenty medyczne
+
+
 class PDFExtractionResponse(BaseModel):
     """Response model for PDF data extraction - simplified version"""
     # CZĘŚĆ 1: Dane osoby poszkodowanej
@@ -198,7 +247,15 @@ class InjuredStatementRequest(BaseModel):
     pesel: str = ""
     nip: str = ""
     residenceAddress: str = ""
-    correspondenceAddress: str = ""
+    
+    # Employment
+    employmentPlace: str = ""
+    position: str = ""
+    identityDocument: str = ""
+    
+    # Description
+    accidentDescription: str = ""
+    medicalDocuments: List[str] = Field(default_factory=list)
     employmentPlace: str = ""
     position: str = ""
     identityDocument: str = ""

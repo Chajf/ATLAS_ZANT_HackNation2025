@@ -5,6 +5,6 @@ langchain
 langchain-ollama
 langchain-groq
 pypdf
+python-docx
 python-multipart
 pymupdf
-python-docx
