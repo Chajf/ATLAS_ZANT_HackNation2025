@@ -156,7 +156,7 @@ def generate_decision_justification(decision: str, assessment: OfficeAssessmentR
     try:
         from schemas import JustificationResponse
         
-        structured_llm = llm_llama.with_structured_output(
+        structured_llm = llm.with_structured_output(
             schema=JustificationResponse,
             method="json_mode"
         )
@@ -201,12 +201,12 @@ TYP DECYZJI: {decision}
                     "error": "BŁĄD KRYTYCZNY",
                     "warning": "OSTRZEŻENIE",
                     "info": "INFORMACJA"
-                }.get(issue.get("severity", "info"), "INFORMACJA")
+                }.get(issue.severity, "INFORMACJA")
                 
-                assessment_summary += f"\n- {severity_pl} - {issue.get('field', 'Nieznane pole')}: {issue.get('message', 'Brak opisu')}"
-                if issue.get("pdfValue") or issue.get("docxValue"):
-                    assessment_summary += f"\n  * Wartość w zgłoszeniu ZUS (PDF): {issue.get('pdfValue', 'brak')}"
-                    assessment_summary += f"\n  * Wartość w wyjaśnieniu poszkodowanego (DOCX): {issue.get('docxValue', 'brak')}"
+                assessment_summary += f"\n- {severity_pl} - {issue.field}: {issue.message}"
+                if issue.pdfValue or issue.docxValue:
+                    assessment_summary += f"\n  * Wartość w zgłoszeniu ZUS (PDF): {issue.pdfValue or 'brak'}"
+                    assessment_summary += f"\n  * Wartość w wyjaśnieniu poszkodowanego (DOCX): {issue.docxValue or 'brak'}"
             
             assessment_summary += "\n\nUWAGA: Rozbieżności między dokumentami mogą wskazywać na problemy z wiarygodnością zeznań lub błędy w dokumentacji. Należy to uwzględnić w uzasadnieniu, szczególnie przy decyzji o odmowie."
         
