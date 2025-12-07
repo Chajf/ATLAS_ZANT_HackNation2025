@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../config';
 
 function OfficialStatement({ analysisData, extractedData, assessmentData }) {
   const [formData, setFormData] = useState({
@@ -55,7 +56,7 @@ function OfficialStatement({ analysisData, extractedData, assessmentData }) {
       // Prepare validation issues if available
       const validationIssues = analysisData?.eligibility?.validationIssues || [];
 
-      const response = await fetch('http://localhost:8000/generate-justification', {
+      const response = await fetch(API_ENDPOINTS.GENERATE_JUSTIFICATION, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
