@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../config';
 
 function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
   const [cardData, setCardData] = useState({
@@ -157,21 +158,33 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
     alert('Karta wypadku została zapisana');
   };
 
-  const exportToPDF = () => {
-    alert('Eksport do PDF - funkcjonalność w przygotowaniu');
-  };
+  const exportToDOCX = async () => {
+    try {
+      const response = await fetch(API_ENDPOINTS.GENERATE_ACCIDENT_CARD, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cardData),
+      });
 
-  const downloadJSON = () => {
-    const jsonData = JSON.stringify(cardData, null, 2);
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `karta_wypadku_${cardData.victimLastName || 'draft'}_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      if (!response.ok) {
+        throw new Error('Nie udało się wygenerować karty wypadku');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `karta_wypadku_${cardData.victimLastName || 'draft'}_${new Date().toISOString().split('T')[0]}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error downloading DOCX:', err);
+      alert('Nie udało się pobrać karty wypadku. Sprawdź czy serwer działa.');
+    }
   };
 
   return (
@@ -1011,14 +1024,8 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
           <button type="submit" className="submit-btn">
             Zapisz kartę wypadku
           </button>
-          <button type="button" className="export-btn" onClick={exportToPDF}>
-            Eksportuj do PDF
-          </button>
-          <button type="button" className="print-btn" onClick={() => window.print()}>
-            Drukuj
-          </button>
-          <button type="button" className="download-json-btn" onClick={downloadJSON}>
-            Pobierz JSON
+          <button type="button" className="export-btn" onClick={exportToDOCX}>
+            Eksportuj do DOCX
           </button>
         </div>
       </form>

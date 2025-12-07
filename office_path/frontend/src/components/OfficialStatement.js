@@ -42,19 +42,6 @@ function OfficialStatement({ analysisData, extractedData, assessmentData }) {
     alert('Stanowisko zostało zapisane');
   };
 
-  const downloadJSON = () => {
-    const jsonData = JSON.stringify(formData, null, 2);
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `stanowisko_${formData.caseNumber || 'draft'}_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
   const generateJustification = async () => {
     if (!assessmentData) {
       alert('Brak danych oceny AI. Przejdź najpierw przez krok Oceny Kwalifikowalności.');
@@ -316,9 +303,6 @@ function OfficialStatement({ analysisData, extractedData, assessmentData }) {
           </button>
           <button type="button" className="preview-btn">
             Podgląd dokumentu
-          </button>
-          <button type="button" className="download-json-btn" onClick={downloadJSON}>
-            Pobierz JSON
           </button>
         </div>
       </form>

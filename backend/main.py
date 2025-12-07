@@ -10,9 +10,10 @@ from services import (
     extract_docx_explanation,
     compare_pdf_docx_data,
     generate_accident_notification_pdf, 
-    generate_injured_statement_docx
+    generate_injured_statement_docx,
+    generate_accident_card_docx
 )
-from schemas import AccidentNotificationRequest, InjuredStatementRequest, JustificationRequest
+from schemas import AccidentNotificationRequest, InjuredStatementRequest, JustificationRequest, AccidentCardRequest
 import io
 from datetime import datetime
 
@@ -235,3 +236,32 @@ async def generate_justification(request: JustificationRequest):
         return {"justification": justification}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating justification: {str(e)}")
+
+
+@app.post("/generate-accident-card")
+async def generate_accident_card(request: AccidentCardRequest):
+    """
+    Generate filled accident card DOCX from form data.
+    Returns a downloadable DOCX file.
+    """
+    try:
+        # Generate DOCX
+        docx_bytes = generate_accident_card_docx(request)
+        
+        # Create filename with timestamp
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H%M%S')
+        victim_name = f"{request.victimLastName}_{request.victimFirstName}" if request.victimLastName else "draft"
+        filename = f'karta_wypadku_{victim_name}_{timestamp}.docx'
+        
+        # Return DOCX as downloadable file
+        return Response(
+            content=docx_bytes,
+            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            headers={
+                'Content-Disposition': f'attachment; filename="{filename}"'
+            }
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating accident card: {str(e)}")

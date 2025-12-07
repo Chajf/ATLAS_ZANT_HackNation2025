@@ -6,6 +6,7 @@ export const API_ENDPOINTS = {
   EVALUATE_INJURY: `${API_BASE_URL}/evaluate-injury`,
   ASSESS_WORKPLACE_ACCIDENT: `${API_BASE_URL}/assess-workplace-accident`,
   GENERATE_JUSTIFICATION: `${API_BASE_URL}/generate-justification`,
+  GENERATE_ACCIDENT_CARD: `${API_BASE_URL}/generate-accident-card`,
   HEALTH: `${API_BASE_URL}/health`
 };
 

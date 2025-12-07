@@ -13,7 +13,8 @@ from schemas import (
     OfficeAssessmentResponse,
     CriterionAssessment,
     JustificationRequest,
-    JustificationResponse
+    JustificationResponse,
+    AccidentCardRequest
 )
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 import json
@@ -844,6 +845,136 @@ def compare_pdf_docx_data(pdf_data: PDFExtractionResponse, docx_data: DOCXExplan
         mergedData=merged_data,
         summary=summary
     )
+
+
+def add_run_with_strike(paragraph, text, strike=False):
+    """Add text run with optional strikethrough"""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    
+    run = paragraph.add_run(text)
+    if strike:
+        r = run._r
+        rPr = r.find(qn('w:rPr'))
+        if rPr is None:
+            rPr = OxmlElement('w:rPr')
+            r.insert(0, rPr)
+        strike_tag = OxmlElement('w:strike')
+        rPr.append(strike_tag)
+
+
+def generate_accident_card_docx(data: AccidentCardRequest) -> bytes:
+    """
+    Generate filled accident card DOCX from form data
+    Returns DOCX as bytes
+    """
+    template_path = 'karta-wypadku.docx'
+    
+    if not os.path.exists(template_path):
+        raise FileNotFoundError(f"Template DOCX not found: {template_path}")
+    
+    # Load template
+    doc = Document(template_path)
+    
+    # Convert Pydantic model to dict
+    json_data = data.model_dump()
+    
+    # Build victim name
+    json_data["victimName"] = f"{json_data.get('victimFirstName', '')} {json_data.get('victimLastName', '')}".strip()
+    
+    # Handle accidentClause based on accidentIsWorkAccident
+    accident_state = json_data.get("accidentIsWorkAccident", "").lower()
+    
+    if accident_state == "tak":
+        accident_clause = {
+            "jest": {"text": "Wypadek jest", "strike": False},
+            "nie_jest": {"text": "nie jest", "strike": True}
+        }
+    elif accident_state == "nie":
+        accident_clause = {
+            "jest": {"text": "Wypadek jest", "strike": True},
+            "nie_jest": {"text": "nie jest", "strike": False}
+        }
+    else:
+        accident_clause = {
+            "jest": {"text": "Wypadek jest", "strike": False},
+            "nie_jest": {"text": "nie jest", "strike": False}
+        }
+    
+    # Handle victimViolationClause
+    state = json_data.get("victimViolationProved", "").lower()
+    
+    if state == "przyznano":
+        victim_violation_clause = {
+            "tak": {"text": "TAK", "strike": False},
+            "nie": {"text": "NIE", "strike": True},
+            "suffix": ""
+        }
+    elif state == "odrzucono":
+        victim_violation_clause = {
+            "tak": {"text": "TAK", "strike": True},
+            "nie": {"text": "NIE", "strike": False},
+            "suffix": " (odrzucono)"
+        }
+    else:  # "nie"
+        victim_violation_clause = {
+            "tak": {"text": "TAK", "strike": True},
+            "nie": {"text": "NIE", "strike": False},
+            "suffix": ""
+        }
+    
+    # Replace plain placeholders in paragraphs
+    for p in doc.paragraphs:
+        for key, val in json_data.items():
+            if key not in ["accidentClause", "victimViolationClause"]:
+                p.text = p.text.replace("{{" + key + "}}", str(val))
+    
+    # Replace in tables
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    for key, val in json_data.items():
+                        if key not in ["accidentClause", "victimViolationClause"]:
+                            p.text = p.text.replace("{{" + key + "}}", str(val))
+    
+    # Handle accidentClause with strikethrough
+    for p in doc.paragraphs:
+        if "{{accidentClause}}" in p.text:
+            p.text = ""
+            add_run_with_strike(p, accident_clause["jest"]["text"], accident_clause["jest"]["strike"])
+            p.add_run(" / ")
+            add_run_with_strike(p, accident_clause["nie_jest"]["text"], accident_clause["nie_jest"]["strike"])
+    
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    if "{{accidentClause}}" in p.text:
+                        p.text = ""
+                        add_run_with_strike(p, accident_clause["jest"]["text"], accident_clause["jest"]["strike"])
+                        p.add_run(" / ")
+                        add_run_with_strike(p, accident_clause["nie_jest"]["text"], accident_clause["nie_jest"]["strike"])
+    
+    # Handle victimViolationClause with strikethrough
+    for p in doc.paragraphs:
+        if "{{victimViolationClause}}" in p.text:
+            p.text = ""
+            add_run_with_strike(p, victim_violation_clause["tak"]["text"], victim_violation_clause["tak"]["strike"])
+            p.add_run(" / ")
+            add_run_with_strike(p, victim_violation_clause["nie"]["text"], victim_violation_clause["nie"]["strike"])
+            p.add_run(victim_violation_clause["suffix"])
+    
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    if "{{victimViolationClause}}" in p.text:
+                        p.text = ""
+                        add_run_with_strike(p, victim_violation_clause["tak"]["text"], victim_violation_clause["tak"]["strike"])
+                        p.add_run(" / ")
+                        add_run_with_strike(p, victim_violation_clause["nie"]["text"], victim_violation_clause["nie"]["strike"])
+                        p.add_run(victim_violation_clause["suffix"])
     
     # Save to bytes
     docx_bytes = io.BytesIO()

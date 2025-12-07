@@ -303,3 +303,73 @@ class JustificationResponse(BaseModel):
     justification: str = Field(
         description="Professional, detailed justification text in Polish for the office worker's decision"
     )
+
+
+class AccidentCardRequest(BaseModel):
+    """Request model for accident card DOCX generation"""
+    # All fields from the accident card form
+    employerName: str = ""
+    employerAddress: str = ""
+    employerRegon: str = ""
+    employerNip: str = ""
+    employerActivity: str = ""
+    
+    victimLastName: str = ""
+    victimFirstName: str = ""
+    victimPesel: str = ""
+    victimAddress: str = ""
+    victimDocumentType: str = ""
+    victimDocumentSeries: str = ""
+    victimDocumentNumber: str = ""
+    victimBirthDate: str = ""
+    victimBirthPlace: str = ""
+    victimEducation: str = ""
+    victimPosition: str = ""
+    victimExperience: str = ""
+    victimEmploymentType: str = ""
+    victimInsuranceTitle: str = ""
+    victimInsuranceTitleNumber: str = ""
+    
+    accidentDate: str = ""
+    accidentTime: str = ""
+    accidentPlace: str = ""
+    accidentDescription: str = ""
+    accidentCause: str = ""
+    witness1Name: str = ""
+    witness1Address: str = ""
+    witness2Name: str = ""
+    witness2Address: str = ""
+    witness3Name: str = ""
+    witness3Address: str = ""
+    
+    injuryType: str = ""
+    injuryDescription: str = ""
+    medicalHelp: str = ""
+    hospitalName: str = ""
+    sickLeaveDays: str = ""
+    medicalDocuments: str = ""
+    
+    workTask: str = ""
+    safetyTraining: str = ""
+    safetyEquipment: str = ""
+    dangerousConditions: str = ""
+    
+    teamConclusion: str = ""
+    preventiveMeasures: str = ""
+    responsible: str = ""
+    
+    decision: str = ""
+    decisionJustification: str = ""
+    victimViolationProved: str = "nie"
+    victimViolationEvidence: str = ""
+    victimIntoxicationProved: str = "nie"
+    victimIntoxicationEvidence: str = ""
+    
+    cardReceivedDate: str = ""
+    cardPreparationObstacles: str = ""
+    preparingEntityName: str = ""
+    preparerName: str = ""
+    
+    accidentIsWorkAccident: str = "tak"
+    accidentReportDate: str = ""
+    accidentReporterName: str = ""

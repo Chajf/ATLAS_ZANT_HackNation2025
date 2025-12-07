@@ -60,35 +60,6 @@ function ExplanationSection({ analysisData }) {
             </p>
           </div>
         </div>
-
-        <div className="explanation-block highlight">
-          <h3>📌 Wnioski</h3>
-          <div className="explanation-text">
-            {analysisData?.eligibility?.decision === 'approved' && (
-              <p>
-                Na podstawie analizy przedstawionej dokumentacji oraz obowiązujących przepisów 
-                prawa, zdarzenie spełnia wszystkie kryteria definicyjne wypadku przy pracy. 
-                Stwierdzone zostały wszystkie wymagane związki: przyczynowy, czasowy, miejscowy 
-                i funkcjonalny.
-              </p>
-            )}
-            {analysisData?.eligibility?.decision === 'rejected' && (
-              <p>
-                Na podstawie analizy przedstawionej dokumentacji stwierdzono, że zdarzenie 
-                nie spełnia kryteriów definicyjnych wypadku przy pracy ze względu na brak 
-                wymaganych związków lub niespełnienie innych warunków określonych w przepisach.
-              </p>
-            )}
-            {analysisData?.eligibility?.decision === 'investigation_needed' && (
-              <p>
-                Przedstawiona dokumentacja nie pozwala na jednoznaczne podjęcie decyzji 
-                o uznaniu lub odmowie uznania zdarzenia za wypadek przy pracy. Konieczne 
-                jest przeprowadzenie postępowania wyjaśniającego oraz uzyskanie dodatkowych 
-                dokumentów wskazanych w sekcji oceny kwalifikowalności.
-              </p>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
