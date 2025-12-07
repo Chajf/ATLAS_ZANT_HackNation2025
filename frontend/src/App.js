@@ -353,7 +353,7 @@ function App() {
     return (
       <div className="App">
         <header className="app-header" style={{ marginBottom: '2rem' }}>
-          <h1>ATLAS ZANT</h1>
+          <h1>wypełniAI</h1>
         </header>
         
         <main className="main-content">
@@ -361,7 +361,7 @@ function App() {
         </main>
         
         <footer className="app-footer">
-          <p>System do zgłaszania wypadków przy pracy - ATLAS ZANT</p>
+          <p>System do zgłaszania wypadków przy pracy - wypełniAI</p>
         </footer>
       </div>
     );
@@ -431,27 +431,31 @@ function App() {
             <button 
               onClick={handleBackToHome}
               style={{
-                background: 'rgba(255, 255, 255, 0.2)',
+                background: 'linear-gradient(135deg, #039b45 0%, #81cb32 100%)',
                 border: 'none',
                 color: 'white',
                 padding: '0.5rem 1rem',
                 borderRadius: '6px',
                 cursor: 'pointer',
                 fontSize: '0.9rem',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                fontWeight: '600',
+                boxShadow: '0 2px 8px rgba(3, 155, 69, 0.2)'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(3, 155, 69, 0.3)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(3, 155, 69, 0.2)';
               }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
                 </svg>
-                Wróć do strony głównej
+                Strona główna
               </span>
             </button>
             <h1>Zapis Wyjaśnień Poszkodowanego</h1>
@@ -470,7 +474,7 @@ function App() {
         </main>
         
         <footer className="app-footer">
-          <p>System do zgłaszania wypadków przy pracy - ATLAS ZANT</p>
+          <p>System do zgłaszania wypadków przy pracy - wypełniAI</p>
         </footer>
       </div>
     );
@@ -484,30 +488,34 @@ function App() {
           <button 
             onClick={handleBackToHome}
             style={{
-              background: 'rgba(255, 255, 255, 0.2)',
+              background: 'linear-gradient(135deg, #039b45 0%, #81cb32 100%)',
               border: 'none',
               color: 'white',
               padding: '0.5rem 1rem',
               borderRadius: '6px',
               cursor: 'pointer',
               fontSize: '0.9rem',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
+              fontWeight: '600',
+              boxShadow: '0 2px 8px rgba(3, 155, 69, 0.2)'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(3, 155, 69, 0.3)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(3, 155, 69, 0.2)';
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
               </svg>
-              Wróć do strony głównej
+              Strona główna
             </span>
           </button>
-          <h1>ZANT - Zawiadomienie o Wypadku przy Pracy (EWYP)</h1>
+          <h1>wypełniAI - Zawiadomienie o Wypadku przy Pracy (EWYP)</h1>
         </div>
         <div className="progress-bar">
           <div 
@@ -523,7 +531,7 @@ function App() {
       </main>
       
       <footer className="app-footer">
-        <p>System do zgłaszania wypadków przy pracy - ATLAS ZANT</p>
+        <p>System do zgłaszania wypadków przy pracy - wypełniAI</p>
       </footer>
     </div>
   );
