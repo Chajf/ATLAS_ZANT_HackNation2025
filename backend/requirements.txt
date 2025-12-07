@@ -7,3 +7,4 @@ langchain-groq
 pypdf
 python-multipart
 pymupdf
+python-docx

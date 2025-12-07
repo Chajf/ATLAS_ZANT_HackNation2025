@@ -1,8 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
-from services import evaluate_injury_description, extract_pdf_data, generate_accident_notification_pdf
-from schemas import AccidentNotificationRequest
+from services import evaluate_injury_description, extract_pdf_data, generate_accident_notification_pdf, generate_injured_statement_docx
+from schemas import AccidentNotificationRequest, InjuredStatementRequest
 import io
 from datetime import datetime
 
@@ -81,3 +81,33 @@ async def generate_accident_notification(request: AccidentNotificationRequest):
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
+
+
+@app.post("/generate-injured-statement")
+async def generate_injured_statement(request: InjuredStatementRequest):
+    """
+    Generate injured person's statement DOCX (Zapis wyjaśnień poszkodowanego) from form data.
+    Returns a downloadable DOCX file.
+    """
+    try:
+        # Generate DOCX
+        docx_bytes = generate_injured_statement_docx(request)
+        
+        # Create filename with timestamp
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H%M%S')
+        filename = f'Zapis_wyjasnienia_poszkodowanego_{timestamp}.docx'
+        
+        # Return DOCX as downloadable file
+        return Response(
+            content=docx_bytes,
+            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            headers={
+                'Content-Disposition': f'attachment; filename="{filename}"'
+            }
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except ImportError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating DOCX: {str(e)}")

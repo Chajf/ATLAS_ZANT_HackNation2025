@@ -83,17 +83,31 @@ function ExplanationSection2({ formData, updateFormData, onNext, onPrev }) {
           </div>
         </div>
 
-        <div className="form-group">
-          <label className="required">PESEL</label>
-          <input
-            type="text"
-            value={formData.pesel || ''}
-            onChange={(e) => updateFormData('pesel', e.target.value)}
-            placeholder="11 cyfr bez spacji"
-            pattern="[0-9]{11}"
-            maxLength="11"
-            required
-          />
+        <div className="form-row">
+          <div className="form-group">
+            <label className="required">PESEL</label>
+            <input
+              type="text"
+              value={formData.pesel || ''}
+              onChange={(e) => updateFormData('pesel', e.target.value)}
+              placeholder="11 cyfr bez spacji"
+              pattern="[0-9]{11}"
+              maxLength="11"
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>NIP (opcjonalnie)</label>
+            <input
+              type="text"
+              value={formData.nip || ''}
+              onChange={(e) => updateFormData('nip', e.target.value)}
+              placeholder="10 cyfr bez kresek"
+              pattern="[0-9]{10}"
+              maxLength="10"
+            />
+          </div>
         </div>
 
         <div className="form-group">

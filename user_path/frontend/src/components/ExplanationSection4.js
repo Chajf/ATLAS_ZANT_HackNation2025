@@ -1,6 +1,68 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 function ExplanationSection4({ formData, onPrev }) {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
+  const handleDownloadDOCX = async () => {
+    setIsDownloading(true);
+    setError(null);
+    
+    try {
+      // Prepare data with generated date
+      const requestData = {
+        ...formData,
+        generatedDate: new Date().toLocaleString('pl-PL')
+      };
+
+      const response = await fetch(`${API_URL}/generate-injured-statement`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Błąd serwera' }));
+        throw new Error(errorData.detail || `Błąd HTTP: ${response.status}`);
+      }
+
+      // Get DOCX blob from response
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Extract filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `Zapis_wyjasnienia_poszkodowanego_${new Date().toISOString().split('T')[0]}.docx`;
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (err) {
+      console.error('Error downloading DOCX:', err);
+      setError(err.message || 'Nie udało się pobrać pliku DOCX. Sprawdź czy backend jest uruchomiony.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const handleDownload = (format) => {
     // Przygotowanie danych do pobrania
     const data = {
@@ -43,6 +105,7 @@ function ExplanationSection4({ formData, onPrev }) {
       content += `Data urodzenia: ${formData.birthDate || 'Nie podano'}\n`;
       content += `Miejsce urodzenia: ${formData.birthPlace || 'Nie podano'}\n`;
       content += `PESEL: ${formData.pesel || 'Nie podano'}\n`;
+      content += `NIP: ${formData.nip || 'Nie podano'}\n`;
       content += `Miejsce zamieszkania: ${formData.residenceAddress || 'Nie podano'}\n`;
       content += `Adres do korespondencji: ${formData.correspondenceAddress || 'Nie podano'}\n`;
       content += `Miejsce zatrudnienia: ${formData.employmentPlace || 'Nie podano'}\n`;
@@ -121,6 +184,19 @@ function ExplanationSection4({ formData, onPrev }) {
         </ul>
       </div>
 
+      {error && (
+        <div style={{ 
+          backgroundColor: '#fee', 
+          color: '#c33', 
+          padding: '1rem', 
+          borderRadius: '8px', 
+          marginBottom: '1rem',
+          border: '1px solid #fcc'
+        }}>
+          <strong>Błąd:</strong> {error}
+        </div>
+      )}
+
       <div style={{
         background: 'white',
         border: '2px solid #e0e0e0',
@@ -135,10 +211,59 @@ function ExplanationSection4({ formData, onPrev }) {
           Pobierz dokument
         </h3>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginBottom: '1rem' }}>
           <button
-            onClick={() => handleDownload('txt')}
+            onClick={handleDownloadDOCX}
+            disabled={isDownloading}
             style={{
+              padding: '1.5rem',
+              background: isDownloading 
+                ? 'linear-gradient(135deg, #999 0%, #777 100%)' 
+                : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: isDownloading ? 'not-allowed' : 'pointer',
+              fontSize: '1rem',
+              fontWeight: '600',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+              opacity: isDownloading ? 0.7 : 1
+            }}
+            onMouseEnter={(e) => {
+              if (!isDownloading) {
+                e.currentTarget.style.transform = 'translateY(-3px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.3)';
+            }}
+          >
+            <div style={{ marginBottom: '0.5rem' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="white">
+                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+              </svg>
+            </div>
+            <div style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>
+              {isDownloading ? 'Generowanie DOCX...' : '📄 Pobierz Zapis Wyjaśnień (DOCX)'}
+            </div>
+            <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+              Gotowy dokument Word do wydruku i podpisu
+            </div>
+          </button>
+        </div>
+
+        <details style={{ marginTop: '1rem' }}>
+          <summary style={{ cursor: 'pointer', color: '#667eea', fontWeight: '600', marginBottom: '0.5rem' }}>
+            Pobierz w innych formatach (opcjonalnie)
+          </summary>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+            <button
+              onClick={() => handleDownload('txt')}
+              disabled={isDownloading}
+              style={{
               padding: '1.5rem',
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               color: 'white',
@@ -170,40 +295,45 @@ function ExplanationSection4({ formData, onPrev }) {
             </div>
           </button>
 
-          <button
-            onClick={() => handleDownload('json')}
-            style={{
-              padding: '1.5rem',
-              background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '1rem',
-              fontWeight: '600',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 15px rgba(245, 87, 108, 0.3)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-3px)';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(245, 87, 108, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 15px rgba(245, 87, 108, 0.3)';
-            }}
-          >
-            <div style={{ marginBottom: '0.5rem' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="white">
-                <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
-              </svg>
-            </div>
-            <div style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>Format danych (JSON)</div>
-            <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
-              Do przechowania i ponownej edycji
-            </div>
-          </button>
-        </div>
+            <button
+              onClick={() => handleDownload('json')}
+              disabled={isDownloading}
+              style={{
+                padding: '1.5rem',
+                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: isDownloading ? 'not-allowed' : 'pointer',
+                fontSize: '1rem',
+                fontWeight: '600',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 15px rgba(245, 87, 108, 0.3)',
+                opacity: isDownloading ? 0.7 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!isDownloading) {
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(245, 87, 108, 0.4)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(245, 87, 108, 0.3)';
+              }}
+            >
+              <div style={{ marginBottom: '0.5rem' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="white">
+                  <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+                </svg>
+              </div>
+              <div style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>Format danych (JSON)</div>
+              <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+                Do przechowania i ponownej edycji
+              </div>
+            </button>
+          </div>
+        </details>
 
         <div style={{
           marginTop: '1.5rem',
@@ -218,8 +348,10 @@ function ExplanationSection4({ formData, onPrev }) {
               <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C7.8 12.16 7 10.63 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1z"/>
             </svg>
             Wskazówka:
-          </strong> Pobierz dokument w formacie TXT, wydrukuj go, 
-          podpisz i dostarcz do ZUS. Format JSON możesz zachować jako kopię zapasową danych.
+          </strong> {isDownloading 
+            ? 'Trwa generowanie dokumentu...' 
+            : 'Pobierz dokument w formacie DOCX (Word), wydrukuj go, podpisz i dostarcz do ZUS. Możesz też pobrać kopię w innych formatach.'
+          }
         </div>
       </div>
 

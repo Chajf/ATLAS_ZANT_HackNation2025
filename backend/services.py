@@ -1,6 +1,6 @@
 from langchain_ollama import ChatOllama
 from langchain_groq import ChatGroq
-from schemas import InjuryEvaluationResponse, InjuryDescriptionRequest, ComponentEvaluation, PDFExtractionResponse, AccidentNotificationRequest
+from schemas import InjuryEvaluationResponse, InjuryDescriptionRequest, ComponentEvaluation, PDFExtractionResponse, AccidentNotificationRequest, InjuredStatementRequest
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 import json
 import os
@@ -8,12 +8,8 @@ from pypdf import PdfReader
 import io
 from typing import BinaryIO
 from datetime import datetime
-
-try:
-    import fitz  # PyMuPDF
-    PYMUPDF_AVAILABLE = True
-except ImportError:
-    PYMUPDF_AVAILABLE = False
+import fitz  # PyMuPDF
+from docx import Document
 
 # llm = ChatOllama(
 #     model="qwen3:latest",
@@ -267,7 +263,95 @@ def generate_accident_notification_pdf(data: AccidentNotificationRequest) -> byt
     # Convert Pydantic model to dict
     json_data = data.model_dump()
     
-    if PYMUPDF_AVAILABLE:
-        return fill_pdf_with_pymupdf(input_pdf, json_data)
+    return fill_pdf_with_pymupdf(input_pdf, json_data)
+
+
+def replace_placeholders_in_paragraph(paragraph, mapping):
+    """Replace placeholders {{key}} in a single paragraph"""
+    # Get full paragraph text
+    full_text = paragraph.text
+    
+    # Replace all placeholders in the full text
+    for key, val in mapping.items():
+        placeholder = f"{{{{{key}}}}}"
+        full_text = full_text.replace(placeholder, str(val))
+    
+    # If no replacements were made, return early
+    if full_text == paragraph.text:
+        return
+    
+    # Clear existing runs and add new text
+    # First, preserve the formatting from the first run
+    if paragraph.runs:
+        first_run = paragraph.runs[0]
+        # Clear all runs
+        for run in paragraph.runs:
+            run.text = ""
+        # Set the new text in the first run
+        first_run.text = full_text
     else:
-        raise ImportError("PyMuPDF (fitz) is required for PDF generation. Install with: pip install pymupdf")
+        # If no runs exist, add the text
+        paragraph.add_run(full_text)
+
+
+def replace_placeholders_in_tables(doc, mapping):
+    """Replace placeholders in tables"""
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    replace_placeholders_in_paragraph(paragraph, mapping)
+
+
+def generate_injured_statement_docx(data: InjuredStatementRequest) -> bytes:
+    """
+    Generate filled injured person's statement DOCX from form data
+    Returns DOCX as bytes
+    """
+    template_path = 'B1a_wyjasnienia_poszkodowanego_o_wypadku_przy_pracy.docx'
+    
+    if not os.path.exists(template_path):
+        raise FileNotFoundError(f"Template DOCX not found: {template_path}")
+    
+    # Load template
+    doc = Document(template_path)
+    
+    # Convert Pydantic model to dict
+    json_data = data.model_dump()
+    
+    # Prepare mapping for placeholders
+    mapping = {
+        "generatedDate": json_data.get("generatedDate", ""),
+        "accidentDate": json_data.get("accidentDate", ""),
+        "accidentTime": json_data.get("accidentTime", ""),
+        "accidentLocation":
+            f"{json_data.get('accidentStreet', '')} {json_data.get('accidentHouseNumber', '')}/"
+            f"{json_data.get('accidentApartmentNumber', '')}, "
+            f"{json_data.get('accidentPostalCode', '')} {json_data.get('accidentCity', '')}",
+        
+        "firstNameLastName": f"{json_data.get('firstName', '')} {json_data.get('lastName', '')}",
+        "fatherName": json_data.get("fatherName", ""),
+        "birthDatePlace": f"{json_data.get('birthDate', '')}, {json_data.get('birthPlace', '')}",
+        "pesel": json_data.get("pesel", ""),
+        "nip": json_data.get("nip", ""),
+        "residenceAddress": json_data.get("residenceAddress", ""),
+        "employmentPlace": json_data.get("employmentPlace", ""),
+        "position": json_data.get("position", ""),
+        "identityDocument": json_data.get("identityDocument", ""),
+        "accidentDescription": json_data.get("accidentDescription", ""),
+        "medicalDocuments": ", ".join(json_data.get("medicalDocuments", [])) if json_data.get("medicalDocuments") else ""
+    }
+    
+    # Replace placeholders in paragraphs
+    for paragraph in doc.paragraphs:
+        replace_placeholders_in_paragraph(paragraph, mapping)
+    
+    # Replace placeholders in tables
+    replace_placeholders_in_tables(doc, mapping)
+    
+    # Save to bytes
+    docx_bytes = io.BytesIO()
+    doc.save(docx_bytes)
+    docx_bytes.seek(0)
+    
+    return docx_bytes.getvalue()

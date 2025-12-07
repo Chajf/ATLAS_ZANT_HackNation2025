@@ -175,3 +175,34 @@ class AccidentNotificationRequest(BaseModel):
     declarationDate: str = ""
     documentsDeliveryDate: str = ""
     responseMethod: str = ""
+
+
+class InjuredStatementRequest(BaseModel):
+    """Request model for injured person's statement DOCX generation"""
+    # Accident details
+    generatedDate: str = ""
+    accidentDate: str = ""
+    accidentTime: str = ""
+    accidentStreet: str = ""
+    accidentHouseNumber: str = ""
+    accidentApartmentNumber: str = ""
+    accidentPostalCode: str = ""
+    accidentCity: str = ""
+    
+    # Personal data
+    firstName: str = ""
+    lastName: str = ""
+    fatherName: str = ""
+    birthDate: str = ""
+    birthPlace: str = ""
+    pesel: str = ""
+    nip: str = ""
+    residenceAddress: str = ""
+    correspondenceAddress: str = ""
+    employmentPlace: str = ""
+    position: str = ""
+    identityDocument: str = ""
+    
+    # Description
+    accidentDescription: str = ""
+    medicalDocuments: List[str] = Field(default_factory=list)

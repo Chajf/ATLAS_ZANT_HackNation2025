@@ -24,6 +24,7 @@ function App() {
   const [formData, setFormData] = useState({
     // Section 1 - Victim's personal data
     pesel: '',
+    nip: '',
     documentType: '',
     documentSeries: '',
     documentNumber: '',
