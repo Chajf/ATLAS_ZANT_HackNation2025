@@ -9,17 +9,29 @@ backend/venv/
 backend/.venv/
 backend/.pytest_cache/
 
-# Frontend
-frontend/node_modules/
-frontend/build/
-frontend/dist/
-frontend/.env.local
-frontend/.env.development.local
-frontend/.env.test.local
-frontend/.env.production.local
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
+# User Path - Frontend
+user_path/frontend/node_modules/
+user_path/frontend/build/
+user_path/frontend/dist/
+user_path/frontend/.env.local
+user_path/frontend/.env.development.local
+user_path/frontend/.env.test.local
+user_path/frontend/.env.production.local
+user_path/frontend/npm-debug.log*
+user_path/frontend/yarn-debug.log*
+user_path/frontend/yarn-error.log*
+
+# Office Path - Frontend
+office_path/frontend/node_modules/
+office_path/frontend/build/
+office_path/frontend/dist/
+office_path/frontend/.env.local
+office_path/frontend/.env.development.local
+office_path/frontend/.env.test.local
+office_path/frontend/.env.production.local
+office_path/frontend/npm-debug.log*
+office_path/frontend/yarn-debug.log*
+office_path/frontend/yarn-error.log*
 
 # IDE
 .vscode/
