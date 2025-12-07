@@ -70,7 +70,12 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
     cardReceivedDate: '',
     cardPreparationObstacles: '',
     preparingEntityName: '',
-    preparerName: ''
+    preparerName: '',
+    
+    // IX. Dodatkowe informacje
+    accidentIsWorkAccident: 'tak',
+    accidentReportDate: '',
+    accidentReporterName: ''
   });
 
   // Auto-fill form data when extractedData is available
@@ -120,7 +125,20 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
         workTask: extractedData.accidentDescription ? 'Wykonywanie zwykłych obowiązków służbowych' : '',
         
         // VII. Decyzja
-        decision: analysisData?.eligibility?.decision || ''
+        decision: analysisData?.eligibility?.decision || '',
+        
+        // IX. Dodatkowe informacje
+        accidentReportDate: extractedData.accidentDate || '',
+        accidentReporterName: extractedData.notifierFirstName && extractedData.notifierLastName 
+          ? `${extractedData.notifierFirstName} ${extractedData.notifierLastName}`.trim() 
+          : '',
+        
+        // Additional victim data
+        victimBirthDate: extractedData.birthDate || '',
+        victimBirthPlace: extractedData.birthPlace || '',
+        victimDocumentType: extractedData.documentType || '',
+        victimDocumentSeries: extractedData.documentSeries || '',
+        victimDocumentNumber: extractedData.documentNumber || ''
       }));
     }
   }, [extractedData, analysisData]);
@@ -940,6 +958,52 @@ function AccidentCard({ uploadedFiles, analysisData, extractedData }) {
               placeholder="Jan Kowalski"
               required
             />
+          </div>
+        </div>
+
+        {/* IX. DODATKOWE INFORMACJE */}
+        <div className="form-section-card">
+          <h3>IX. Dodatkowe informacje</h3>
+          
+          <div className="form-group">
+            <label htmlFor="accidentIsWorkAccident">Czy wypadek miał miejsce w godzinach pracy? *</label>
+            <select
+              id="accidentIsWorkAccident"
+              name="accidentIsWorkAccident"
+              value={cardData.accidentIsWorkAccident}
+              onChange={handleChange}
+              required
+            >
+              <option value="tak">Tak</option>
+              <option value="nie">Nie</option>
+            </select>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="accidentReportDate">Data zgłoszenia wypadku *</label>
+              <input
+                type="date"
+                id="accidentReportDate"
+                name="accidentReportDate"
+                value={cardData.accidentReportDate}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="accidentReporterName">Imię i nazwisko osoby zgłaszającej *</label>
+              <input
+                type="text"
+                id="accidentReporterName"
+                name="accidentReporterName"
+                value={cardData.accidentReporterName}
+                onChange={handleChange}
+                placeholder="Jan Kowalski"
+                required
+              />
+            </div>
           </div>
         </div>
 
