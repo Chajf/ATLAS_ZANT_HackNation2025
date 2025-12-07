@@ -282,10 +282,24 @@ class InjuredStatementRequest(BaseModel):
     # Description
     accidentDescription: str = ""
     medicalDocuments: List[str] = Field(default_factory=list)
-    employmentPlace: str = ""
-    position: str = ""
-    identityDocument: str = ""
-    
-    # Description
-    accidentDescription: str = ""
-    medicalDocuments: List[str] = Field(default_factory=list)
+
+
+class JustificationRequest(BaseModel):
+    """Request model for generating decision justification"""
+    decision: Literal["approved", "rejected", "investigation_needed"] = Field(
+        description="Office worker's decision: approved (uznanie za wypadek), rejected (odmowa), investigation_needed (postępowanie wyjaśniające)"
+    )
+    assessment: OfficeAssessmentResponse = Field(
+        description="Complete AI assessment with all four criteria evaluations"
+    )
+    validationIssues: Optional[List[ValidationIssue]] = Field(
+        default=None,
+        description="Optional list of data mismatches/inconsistencies between documents (PDF vs DOCX)"
+    )
+
+
+class JustificationResponse(BaseModel):
+    """Response model for generated justification"""
+    justification: str = Field(
+        description="Professional, detailed justification text in Polish for the office worker's decision"
+    )

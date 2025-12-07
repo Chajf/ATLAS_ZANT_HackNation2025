@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-function OfficialStatement({ analysisData, extractedData }) {
+function OfficialStatement({ analysisData, extractedData, assessmentData }) {
   const [formData, setFormData] = useState({
     caseNumber: '',
     victimName: '',
@@ -55,35 +55,51 @@ function OfficialStatement({ analysisData, extractedData }) {
     URL.revokeObjectURL(url);
   };
 
-  const generateJustification = () => {
-    let text = '';
-    
-    if (analysisData?.eligibility?.decision === 'approved') {
-      text = `Po przeprowadzeniu szczegółowej analizy dokumentacji oraz okoliczności zdarzenia, `;
-      text += `stwierdzam, że przedmiotowe zdarzenie spełnia wszystkie kryteria wypadku przy pracy `;
-      text += `określone w art. 3 ust. 1 ustawy z dnia 30 października 2002 r. o ubezpieczeniu społecznym `;
-      text += `z tytułu wypadków przy pracy i chorób zawodowych.\n\n`;
-      text += `Zdarzenie charakteryzowało się nagłością, zostało wywołane przyczyną zewnętrzną `;
-      text += `i pozostaje w bezpośrednim związku z wykonywaną pracą. Potwierdzone zostały wszystkie `;
-      text += `wymagane związki: przyczynowy, czasowy, miejscowy oraz funkcjonalny.`;
-    } else if (analysisData?.eligibility?.decision === 'rejected') {
-      text = `Po analizie przedstawionej dokumentacji oraz okoliczności zdarzenia, `;
-      text += `stwierdzam, że przedmiotowe zdarzenie nie spełnia kryteriów wypadku przy pracy `;
-      text += `w rozumieniu art. 3 ust. 1 ustawy z dnia 30 października 2002 r. o ubezpieczeniu społecznym `;
-      text += `z tytułu wypadków przy pracy i chorób zawodowych.\n\n`;
-      text += `Analiza wykazała brak niezbędnych związków lub niespełnienie innych warunków `;
-      text += `określonych w przepisach prawa.`;
-    } else {
-      text = `Po wstępnej analizie przedstawionej dokumentacji stwierdzam, że w celu podjęcia `;
-      text += `ostatecznej decyzji o uznaniu lub odmowie uznania zdarzenia za wypadek przy pracy, `;
-      text += `konieczne jest przeprowadzenie postępowania wyjaśniającego.\n\n`;
-      text += `Wymaga się uzupełnienia dokumentacji o następujące dokumenty: `;
-      text += (analysisData?.eligibility?.missingDocuments || []).join(', ');
-      text += `.\n\nDopiero po otrzymaniu kompletnej dokumentacji możliwe będzie wydanie `;
-      text += `merytorycznego rozstrzygnięcia w sprawie.`;
+  const generateJustification = async () => {
+    if (!assessmentData) {
+      alert('Brak danych oceny AI. Przejdź najpierw przez krok Oceny Kwalifikowalności.');
+      return;
     }
-    
-    setFormData(prev => ({ ...prev, justification: text }));
+
+    try {
+      // Show loading state
+      setFormData(prev => ({ ...prev, justification: 'Generuję uzasadnienie...' }));
+
+      // Prepare validation issues if available
+      const validationIssues = analysisData?.eligibility?.validationIssues || [];
+
+      const response = await fetch('http://localhost:8000/generate-justification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          decision: formData.decision,
+          assessment: assessmentData,
+          validationIssues: validationIssues.length > 0 ? validationIssues : null
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Nie udało się wygenerować uzasadnienia');
+      }
+
+      const data = await response.json();
+      setFormData(prev => ({ ...prev, justification: data.justification }));
+    } catch (err) {
+      console.error('Error generating justification:', err);
+      // Fallback to simple justification
+      let text = '';
+      if (formData.decision === 'approved') {
+        text = `Po przeprowadzeniu szczegółowej analizy dokumentacji oraz okoliczności zdarzenia, stwierdzam, że przedmiotowe zdarzenie spełnia wszystkie kryteria wypadku przy pracy określone w art. 3 ust. 1 ustawy z dnia 30 października 2002 r. o ubezpieczeniu społecznym z tytułu wypadków przy pracy i chorób zawodowych.`;
+      } else if (formData.decision === 'rejected') {
+        text = `Po analizie przedstawionej dokumentacji oraz okoliczności zdarzenia, stwierdzam, że przedmiotowe zdarzenie nie spełnia kryteriów wypadku przy pracy w rozumieniu art. 3 ust. 1 ustawy z dnia 30 października 2002 r. o ubezpieczeniu społecznym z tytułu wypadków przy pracy i chorób zawodowych.`;
+      } else {
+        text = `Po wstępnej analizie przedstawionej dokumentacji stwierdzam, że w celu podjęcia ostatecznej decyzji o uznaniu lub odmowie uznania zdarzenia za wypadek przy pracy, konieczne jest przeprowadzenie postępowania wyjaśniającego.`;
+      }
+      setFormData(prev => ({ ...prev, justification: text }));
+      alert('Nie udało się połączyć z serwerem AI. Użyto podstawowego uzasadnienia.');
+    }
   };
 
   return (

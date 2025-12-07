@@ -11,7 +11,9 @@ from schemas import (
     AccidentNotificationRequest,
     InjuredStatementRequest,
     OfficeAssessmentResponse,
-    CriterionAssessment
+    CriterionAssessment,
+    JustificationRequest,
+    JustificationResponse
 )
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 import json
@@ -53,6 +55,9 @@ with open("pdf_extraction_prompt.txt", "r", encoding="utf-8") as file:
 
 with open("office_assessment_prompt.txt", "r", encoding="utf-8") as file:
     office_assessment_prompt = file.read()
+
+with open("justification_prompt.txt", "r", encoding="utf-8") as file:
+    justification_prompt = file.read()
 
 def evaluate_injury_description(user_msg: str) -> InjuryEvaluationResponse:
     try:
@@ -140,6 +145,89 @@ def assess_workplace_accident(description: str) -> OfficeAssessmentResponse:
                 description="Wystąpił błąd podczas analizy systemu."
             )
         )
+
+
+def generate_decision_justification(decision: str, assessment: OfficeAssessmentResponse, validation_issues: List = None) -> str:
+    """
+    Generate professional justification for office worker's decision
+    based on assessment of all four criteria and document validation issues
+    """
+    try:
+        from schemas import JustificationResponse
+        
+        structured_llm = llm_llama.with_structured_output(
+            schema=JustificationResponse,
+            method="json_mode"
+        )
+        
+        # Prepare assessment summary for the prompt
+        status_map = {
+            "ok": "spełnione",
+            "warning": "wymaga wyjaśnienia", 
+            "danger": "niespełnione"
+        }
+        
+        assessment_summary = f"""
+ANALIZA KAŻDEGO KRYTERIUM:
+
+1. NAGŁOŚĆ ZDARZENIA:
+   Ocena: {status_map.get(assessment.sudden.status, assessment.sudden.status)}
+   Okoliczności: {assessment.sudden.description}
+
+2. PRZYCZYNA ZEWNĘTRZNA:
+   Ocena: {status_map.get(assessment.external.status, assessment.external.status)}
+   Okoliczności: {assessment.external.description}
+
+3. ZWIĄZEK Z PRACĄ:
+   Ocena: {status_map.get(assessment.work.status, assessment.work.status)}
+   Okoliczności: {assessment.work.description}
+
+4. SKUTEK - URAZ LUB ŚMIERĆ:
+   Ocena: {status_map.get(assessment.injury.status, assessment.injury.status)}
+   Okoliczności: {assessment.injury.description}
+
+TYP DECYZJI: {decision}
+- approved = uznanie za wypadek przy pracy
+- rejected = odmowa uznania za wypadek przy pracy
+- investigation_needed = konieczne postępowanie wyjaśniające
+"""
+
+        # Add validation issues if present
+        if validation_issues and len(validation_issues) > 0:
+            assessment_summary += "\n\nWYKRYTE ROZBIEŻNOŚCI MIĘDZY DOKUMENTAMI:\n"
+            for issue in validation_issues:
+                severity_pl = {
+                    "error": "BŁĄD KRYTYCZNY",
+                    "warning": "OSTRZEŻENIE",
+                    "info": "INFORMACJA"
+                }.get(issue.get("severity", "info"), "INFORMACJA")
+                
+                assessment_summary += f"\n- {severity_pl} - {issue.get('field', 'Nieznane pole')}: {issue.get('message', 'Brak opisu')}"
+                if issue.get("pdfValue") or issue.get("docxValue"):
+                    assessment_summary += f"\n  * Wartość w zgłoszeniu ZUS (PDF): {issue.get('pdfValue', 'brak')}"
+                    assessment_summary += f"\n  * Wartość w wyjaśnieniu poszkodowanego (DOCX): {issue.get('docxValue', 'brak')}"
+            
+            assessment_summary += "\n\nUWAGA: Rozbieżności między dokumentami mogą wskazywać na problemy z wiarygodnością zeznań lub błędy w dokumentacji. Należy to uwzględnić w uzasadnieniu, szczególnie przy decyzji o odmowie."
+        
+        messages = [
+            SystemMessage(content=justification_prompt),
+            HumanMessage(content=f"Na podstawie poniższej analizy każdego kryterium prawnego oraz typu decyzji, napisz profesjonalne uzasadnienie jako inspektor ds. wypadków przy pracy. Uzasadnienie musi brzmieć naturalnie, jak napisane przez człowieka. Zwróć odpowiedź w formacie JSON z kluczem 'justification'.\n\n{assessment_summary}")
+        ]
+        
+        result = structured_llm.invoke(messages)
+        return result.justification
+    
+    except Exception as e:
+        print(f"Error in generate_decision_justification: {e}")
+        import traceback
+        traceback.print_exc()
+        # Return default justification based on decision type
+        if decision == "approved":
+            return "Po przeprowadzeniu analizy dokumentacji oraz okoliczności zdarzenia, stwierdzam, że przedmiotowe zdarzenie spełnia wszystkie kryteria wypadku przy pracy określone w art. 3 ust. 1 ustawy z dnia 30 października 2002 r. o ubezpieczeniu społecznym z tytułu wypadków przy pracy i chorób zawodowych. Zdarzenie charakteryzowało się nagłością, zostało wywołane przyczyną zewnętrzną i pozostaje w bezpośrednim związku z wykonywaną pracą."
+        elif decision == "rejected":
+            return "Po analizie przedstawionej dokumentacji oraz okoliczności zdarzenia, stwierdzam, że przedmiotowe zdarzenie nie spełnia kryteriów wypadku przy pracy w rozumieniu art. 3 ust. 1 ustawy z dnia 30 października 2002 r. o ubezpieczeniu społecznym z tytułu wypadków przy pracy i chorób zawodowych. Analiza wykazała brak niezbędnych związków lub niespełnienie innych warunków określonych w przepisach prawa."
+        else:
+            return "Po wstępnej analizie przedstawionej dokumentacji stwierdzam, że w celu podjęcia ostatecznej decyzji o uznaniu lub odmowie uznania zdarzenia za wypadek przy pracy, konieczne jest przeprowadzenie postępowania wyjaśniającego. Dopiero po otrzymaniu kompletnej dokumentacji możliwe będzie wydanie merytorycznego rozstrzygnięcia w sprawie."
 
 
 def extract_pdf_data(pdf_file: BinaryIO) -> PDFExtractionResponse:

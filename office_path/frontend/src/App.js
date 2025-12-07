@@ -12,6 +12,7 @@ function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [extractedData, setExtractedData] = useState(null);
   const [analysisData, setAnalysisData] = useState(null);
+  const [assessmentData, setAssessmentData] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
 
   const handleFilesUploaded = (data) => {
@@ -168,7 +169,7 @@ function App() {
 
         {currentStep === 4 && analysisData && (
           <div>
-            <EligibilityAssessment analysisData={analysisData} />
+            <EligibilityAssessment analysisData={analysisData} onAssessmentComplete={setAssessmentData} />
             <button className="next-btn" onClick={() => setCurrentStep(5)}>Dalej</button>
           </div>
         )}
@@ -182,7 +183,7 @@ function App() {
 
         {currentStep === 6 && (
           <div>
-            <OfficialStatement analysisData={analysisData} extractedData={extractedData} />
+            <OfficialStatement analysisData={analysisData} extractedData={extractedData} assessmentData={assessmentData} />
             <button className="next-btn" onClick={() => setCurrentStep(7)}>Dalej</button>
           </div>
         )}

@@ -5,6 +5,7 @@ export const API_ENDPOINTS = {
   UPLOAD_PDF: `${API_BASE_URL}/upload-pdf`,
   EVALUATE_INJURY: `${API_BASE_URL}/evaluate-injury`,
   ASSESS_WORKPLACE_ACCIDENT: `${API_BASE_URL}/assess-workplace-accident`,
+  GENERATE_JUSTIFICATION: `${API_BASE_URL}/generate-justification`,
   HEALTH: `${API_BASE_URL}/health`
 };
 

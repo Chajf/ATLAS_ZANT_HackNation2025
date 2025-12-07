@@ -5,13 +5,14 @@ from typing import Optional
 from services import (
     evaluate_injury_description, 
     assess_workplace_accident,
+    generate_decision_justification,
     extract_pdf_data, 
     extract_docx_explanation,
     compare_pdf_docx_data,
     generate_accident_notification_pdf, 
     generate_injured_statement_docx
 )
-from schemas import AccidentNotificationRequest, InjuredStatementRequest
+from schemas import AccidentNotificationRequest, InjuredStatementRequest, JustificationRequest
 import io
 from datetime import datetime
 
@@ -210,3 +211,27 @@ async def generate_injured_statement(request: InjuredStatementRequest):
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating DOCX: {str(e)}")
+
+
+@app.post("/generate-justification")
+async def generate_justification(request: JustificationRequest):
+    """
+    Generate professional justification for office worker's decision
+    based on AI assessment and selected decision type.
+    
+    Parameters:
+    - decision: approved/rejected/investigation_needed
+    - assessment: Complete OfficeAssessmentResponse with all 4 criteria
+    
+    Returns:
+    - justification: Professional text in Polish explaining the decision
+    """
+    try:
+        justification = generate_decision_justification(
+            decision=request.decision,
+            assessment=request.assessment,
+            validation_issues=request.validationIssues if hasattr(request, 'validationIssues') else None
+        )
+        return {"justification": justification}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating justification: {str(e)}")

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../config';
 
-function EligibilityAssessment({ analysisData }) {
+function EligibilityAssessment({ analysisData, onAssessmentComplete }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [assessment, setAssessment] = useState(null);
@@ -37,6 +37,10 @@ function EligibilityAssessment({ analysisData }) {
 
         const data = await response.json();
         setAssessment(data);
+        // Pass assessment data to parent component
+        if (onAssessmentComplete) {
+          onAssessmentComplete(data);
+        }
       } catch (err) {
         setError(err.message);
         console.error('Error fetching assessment:', err);
@@ -46,7 +50,7 @@ function EligibilityAssessment({ analysisData }) {
     };
 
     fetchAssessment();
-  }, [analysisData]);
+  }, [analysisData, onAssessmentComplete]);
 
   const getStatusColor = (status) => {
     switch (status) {
